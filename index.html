@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>David Field</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+color:#333;
+}
+
+/* layout */
+
+.container{
+display:flex;
+height:100vh;
+}
+
+/* sidebar */
+
+.sidebar{
+width:260px;
+background:#f4f4f4;
+padding:40px 30px;
+border-right:1px solid #ddd;
+box-sizing:border-box;
+}
+
+.logo{
+font-size:28px;
+letter-spacing:3px;
+margin-bottom:40px;
+}
+
+.logo span{
+color:#c33;
+}
+
+.menu{
+list-style:none;
+padding:0;
+}
+
+.menu li{
+margin:20px 0;
+cursor:pointer;
+}
+
+.divider{
+border-top:1px solid #ddd;
+margin:30px 0;
+}
+
+.newsletter input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ddd;
+}
+
+.newsletter button{
+margin-top:10px;
+padding:10px 20px;
+background:black;
+color:white;
+border:none;
+}
+
+/* main */
+
+.main{
+flex:1;
+padding:40px;
+overflow:auto;
+}
+
+/* hero */
+
+.hero{
+position:relative;
+height:420px;
+overflow:hidden;
+}
+
+.slide{
+position:absolute;
+width:100%;
+height:100%;
+opacity:0;
+transition:opacity .8s;
+}
+
+.slide img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.slide.active{
+opacity:1;
+}
+
+.arrow{
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+font-size:30px;
+background:rgba(0,0,0,0.4);
+color:white;
+width:40px;
+height:40px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+.arrow.left{left:10px;}
+.arrow.right{right:10px;}
+
+.title{
+text-align:center;
+margin:40px 0;
+}
+
+/* feed grid */
+
+.feed{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+gap:30px;
+}
+
+/* product card */
+
+.product-card{
+text-decoration:none;
+color:#333;
+transition:.2s;
+}
+
+.product-card:hover{
+transform:translateY(-4px);
+}
+
+.product-img{
+width:100%;
+height:180px;
+object-fit:cover;
+border-radius:4px;
+}
+
+.product-info{
+margin-top:10px;
+}
+
+.product-name{
+font-weight:600;
+font-size:14px;
+}
+
+.product-price{
+font-size:13px;
+color:#888;
+margin-top:4px;
+}
+
+/* drawer */
+.drawer{
+position:fixed;
+top:0;
+right:-420px;
+width:420px;
+height:100%;
+background:white;
+box-shadow:-4px 0 20px rgba(0,0,0,0.15);
+transition:right .3s;
+z-index:1000;
+}
+
+.drawer.open{
+right:0;
+}
+
+.drawer-content{
+padding:30px;
+}
+
+.drawer-close{
+position:absolute;
+top:20px;
+right:20px;
+cursor:pointer;
+font-size:20px;
+}
+
+.drawer-img{
+width:100%;
+height:240px;
+object-fit:cover;
+border-radius:4px;
+}
+
+.drawer-meta{
+margin-top:20px;
+color:#555;
+}
+
+.drawer-actions{
+margin-top:30px;
+display:flex;
+gap:10px;
+}
+
+.login-modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:2000;
+}
+
+.login-box{
+background:white;
+padding:40px;
+width:360px;
+border-radius:8px;
+text-align:center;
+}
+
+.line-login-btn{
+margin-top:20px;
+background:#06C755;
+color:white;
+border:none;
+padding:12px 20px;
+width:100%;
+font-size:16px;
+cursor:pointer;
+border-radius:4px;
+}
+
+.login-close{
+margin-top:20px;
+color:#888;
+cursor:pointer;
+}
+
+.btn-primary{
+flex:1;
+padding:12px;
+background:black;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+.btn-secondary{
+flex:1;
+padding:12px;
+border:1px solid #ddd;
+background:white;
+cursor:pointer;
+}
+
+/* skeleton */
+
+.loader{
+margin-top:30px;
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+gap:30px;
+}
+
+.skeleton{
+background:#eee;
+height:180px;
+border-radius:4px;
+animation:pulse 1.2s infinite;
+}
+
+@keyframes pulse{
+0%{opacity:.6}
+50%{opacity:1}
+100%{opacity:.6}
+}
+
+/* spinner */
+
+.spinner-wrapper{
+display:flex;
+justify-content:center;
+align-items:center;
+margin:30px 0;
+}
+
+.spinner{
+width:32px;
+height:32px;
+border:3px solid #eee;
+border-top:3px solid #333;
+border-radius:50%;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+</style>
+</head>
+
+
+<div id="productDrawer" class="drawer">
+
+<div class="drawer-content">
+
+<div class="drawer-close" onclick="closeDrawer()">✕</div>
+
+<div class="drawer-body">
+
+<img id="drawerImage" class="drawer-img">
+
+<h2 id="drawerTitle"></h2>
+
+<div class="drawer-meta">
+
+<div>型號：<span id="drawerSku"></span></div>
+<div>庫存狀態：<span id="drawerStock"></span></div>
+
+</div>
+
+<div class="drawer-actions">
+
+<button id="stockBtn" class="btn-primary">
+加入看貨清單
+</button>
+
+<button id="wishBtn" class="btn-secondary">
+加入願望清單
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<body>
+
+<div class="container">
+
+<!-- sidebar -->
+
+<div class="sidebar">
+
+<div class="logo">
+D<span>A</span>VID F<span>I</span>ELD
+</div>
+
+<ul class="menu">
+<li>HOME</li>
+<li>生活家居</li>
+<li>關於我們</li>
+<li>大衛部落格</li>
+<li>聯絡我們</li>
+</ul>
+
+<div class="divider"></div>
+
+<div class="newsletter">
+電子報<br>
+<input placeholder="您的電子信箱">
+<button>訂閱</button>
+</div>
+
+</div>
+
+
+<!-- main -->
+
+<div class="main">
+
+<!-- hero -->
+
+<div class="hero">
+
+<div class="slide active">
+<img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85">
+</div>
+
+<div class="slide">
+<img src="https://images.unsplash.com/photo-1493666438817-866a91353ca9">
+</div>
+
+<div class="slide">
+<img src="https://images.unsplash.com/photo-1519710164239-da123dc03ef4">
+</div>
+
+<div class="arrow left" onclick="prevSlide()">‹</div>
+<div class="arrow right" onclick="nextSlide()">›</div>
+
+</div>
+
+<div class="title">
+<h1>大衛菲爾</h1>
+<p>品味生活，從每個細節開始</p>
+</div>
+
+<!-- feed -->
+
+<div id="productFeed" class="feed"></div>
+
+<!-- skeleton loader -->
+
+<div id="loader" class="loader"></div>
+
+<!-- spinner -->
+
+<div id="spinner" class="spinner-wrapper" style="display:none">
+<div class="spinner"></div>
+</div>
+
+</div>
+</div>
+
+
+<script>
+
+/* =========================
+   HERO SLIDER
+========================= */
+
+let slides = document.querySelectorAll(".slide")
+let index = 0
+
+function showSlide(i){
+slides.forEach(s => s.classList.remove("active"))
+slides[i].classList.add("active")
+}
+
+function nextSlide(){
+index = (index + 1) % slides.length
+showSlide(index)
+}
+
+function prevSlide(){
+index = (index - 1 + slides.length) % slides.length
+showSlide(index)
+}
+
+setInterval(nextSlide,4000)
+
+
+
+/* =========================
+   PRODUCT DRAWER
+========================= */
+
+function openProduct(product){
+
+const drawer = document.getElementById("productDrawer")
+
+document.getElementById("drawerTitle").innerText = product.name
+document.getElementById("drawerImage").src = product.image
+document.getElementById("drawerSku").innerText = product.id
+
+const stock = Math.random() > 0.5
+
+document.getElementById("drawerStock").innerText =
+stock ? "有現貨" : "需預訂"
+
+const stockBtn = document.getElementById("stockBtn")
+const wishBtn = document.getElementById("wishBtn")
+
+if(stock){
+stockBtn.style.display="block"
+wishBtn.style.display="none"
+}else{
+stockBtn.style.display="none"
+wishBtn.style.display="block"
+}
+
+drawer.classList.add("open")
+
+}
+
+function closeDrawer(){
+document.getElementById("productDrawer").classList.remove("open")
+}
+
+
+
+/* =========================
+   RENDER FEED
+========================= */
+
+function appendFeed(products){
+
+const container = document.getElementById("productFeed")
+
+container.insertAdjacentHTML(
+"beforeend",
+products.map(p => `
+
+<a class="product-card"
+onclick='openProduct(${JSON.stringify(p)})'>
+
+<img class="product-img" src="${p.image}">
+
+<div class="product-info">
+<div class="product-name">${p.name}</div>
+<div class="product-price">$${p.price}</div>
+</div>
+
+</a>
+
+`).join("")
+)
+
+}
+
+
+
+/* =========================
+   LOADING UI
+========================= */
+
+function showLoader(){
+
+document.getElementById("spinner").style.display="flex"
+
+const loader = document.getElementById("loader")
+
+loader.innerHTML = Array(8).fill(`
+<div class="skeleton"></div>
+`).join("")
+
+}
+
+function hideLoader(){
+
+document.getElementById("spinner").style.display="none"
+document.getElementById("loader").innerHTML=""
+
+}
+
+
+
+/* =========================
+   MOCK BACKEND
+========================= */
+
+let total = 300
+
+function mockApi(cursor,limit){
+
+return new Promise(resolve => {
+
+setTimeout(()=>{
+
+const names=[
+"北歐床架",
+"設計沙發",
+"閱讀椅",
+"雲朵床墊",
+"胡桃木餐桌",
+"極簡茶几",
+"布藝沙發"
+]
+
+const images=[
+"https://images.unsplash.com/photo-1505693416388-ac5ce068fe85",
+"https://images.unsplash.com/photo-1493666438817-866a91353ca9",
+"https://images.unsplash.com/photo-1519710164239-da123dc03ef4",
+"https://images.unsplash.com/photo-1503602642458-232111445657",
+"https://images.unsplash.com/photo-1484101403633-562f891dc89a"
+]
+
+const items=[]
+
+for(let i=0;i<limit;i++){
+
+const id = cursor + i
+if(id >= total) break
+
+items.push({
+id:id,
+name:names[Math.floor(Math.random()*names.length)],
+price:(Math.random()*20000+5000).toFixed(0),
+image:images[Math.floor(Math.random()*images.length)]
+})
+
+}
+
+resolve(items)
+
+},600)
+
+})
+
+}
+
+
+
+/* =========================
+   INFINITE FEED
+========================= */
+
+let cursor = 0
+let loading = false
+const limit = 20
+
+let loadedProducts = 0
+let userLoggedIn = false
+
+async function loadFeed(){
+
+if(loading) return
+
+loading = true
+
+showLoader()
+
+const data = await mockApi(cursor,limit)
+
+hideLoader()
+
+appendFeed(data)
+
+cursor += data.length
+loadedProducts += data.length
+
+loading = false
+
+console.log("loadedProducts:",loadedProducts)
+
+
+/* LOGIN GATE */
+
+if(!userLoggedIn && loadedProducts >= 40){
+
+console.log("Trigger Login")
+
+showLogin()
+
+}
+
+}
+
+
+
+/* =========================
+   SCROLL LISTENER
+========================= */
+
+const scrollContainer = document.querySelector(".main")
+
+scrollContainer.addEventListener("scroll",()=>{
+
+if(scrollContainer.scrollTop + scrollContainer.clientHeight >=
+scrollContainer.scrollHeight - 300){
+
+loadFeed()
+
+}
+
+})
+
+
+
+/* =========================
+   LOGIN MODAL
+========================= */
+
+function showLogin(){
+
+document.getElementById("loginModal").style.display="flex"
+
+}
+
+function closeLogin(){
+
+document.getElementById("loginModal").style.display="none"
+
+}
+
+
+
+/* =========================
+   LINE LOGIN
+========================= */
+
+function lineLogin(){
+
+userLoggedIn = true
+
+window.location.href =
+"https://access.line.me/oauth2/v2.1/authorize"
++
+"?response_type=code"
++
+"&client_id=YOUR_LINE_CHANNEL_ID"
++
+"&redirect_uri=YOUR_REDIRECT_URL"
++
+"&scope=profile%20openid"
++
+"&state=12345"
+
+}
+
+
+
+/* =========================
+   INITIAL LOAD
+========================= */
+
+loadFeed()
+
+</script>
+<div id="loginModal" class="login-modal">
+
+<div class="login-box">
+
+<h3>登入以解鎖更多家具推薦</h3>
+
+<p>登入後可以：</p>
+
+<ul>
+<li>加入願望清單</li>
+<li>建立看貨清單</li>
+<li>保存你的家具搭配</li>
+</ul>
+
+<button class="line-login-btn" onclick="lineLogin()">
+LINE 登入
+</button>
+
+<div class="login-close" onclick="closeLogin()">稍後再說</div>
+
+</div>
+
+</div>
+</body>
+</html>
