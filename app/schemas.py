@@ -1,5 +1,7 @@
 ﻿from pydantic import BaseModel
 
+from .enums import ImageType
+
 
 class VariantOut(BaseModel):
     id: int
@@ -16,7 +18,7 @@ class VariantOut(BaseModel):
 class ImageOut(BaseModel):
     id: int
     image_url: str
-    image_type: str | None = None
+    image_type: ImageType | None = None
     position: int
 
     model_config = {"from_attributes": True}
@@ -28,6 +30,7 @@ class ProductDetailOut(BaseModel):
     name: str
     brand: str | None = None
     category: str | None = None
+    category_slug: str | None = None
     description: str | None = None
     cover_image_url: str | None = None
     variants: list[VariantOut]
@@ -64,6 +67,16 @@ class CreateCollectionIn(BaseModel):
     title: str
     description: str | None = None
     cover_image_url: str | None = None
+    visibility: str = "private"
+    is_store_scene: bool = False
+
+
+class UpdateCollectionIn(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    cover_image_url: str | None = None
+    visibility: str | None = None
+    is_store_scene: bool | None = None
 
 
 class AddCollectionItemIn(BaseModel):
@@ -71,3 +84,38 @@ class AddCollectionItemIn(BaseModel):
     variant_id: int | None = None
     position: int | None = None
     note: str | None = None
+
+
+class AddCollectionImageIn(BaseModel):
+    image_url: str
+    caption: str | None = None
+
+
+class AddCollectionCommentIn(BaseModel):
+    user_id: int
+    content: str
+
+
+class CategoryOut(BaseModel):
+    id: int
+    slug: str
+    name_zh: str
+    name_en: str | None = None
+    parent_id: int | None = None
+    level: int
+    sort_order: int
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
+class LoginIn(BaseModel):
+    display_name: str
+    email: str | None = None
+
+
+class AuthOut(BaseModel):
+    token: str
+    user_id: int
+    display_name: str
+    email: str | None = None

@@ -5,105 +5,285 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>David Field</title>
   <style>
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #333; }
-    .container { display: flex; height: 100vh; }
-    .sidebar { width: 260px; background: #f4f4f4; padding: 40px 30px; border-right: 1px solid #ddd; box-sizing: border-box; }
-    .logo { font-size: 28px; letter-spacing: 3px; margin-bottom: 40px; }
-    .logo span { color: #c33; }
-    .menu { list-style: none; padding: 0; }
-    .menu li { margin: 20px 0; }
-    .divider { border-top: 1px solid #ddd; margin: 30px 0; }
-    .newsletter input { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-    .newsletter button { margin-top: 10px; padding: 10px 20px; background: #000; color: #fff; border: none; cursor: pointer; }
-    .main { flex: 1; padding: 40px; overflow: auto; }
-    .hero { position: relative; height: 320px; overflow: hidden; border-radius: 8px; }
-    .slide { position: absolute; width: 100%; height: 100%; opacity: 0; transition: opacity .8s; }
-    .slide.active { opacity: 1; }
-    .slide img { width: 100%; height: 100%; object-fit: cover; }
-    .arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 24px; background: rgba(0,0,0,0.4); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
-    .arrow.left { left: 10px; }
-    .arrow.right { right: 10px; }
-    .title { text-align: center; margin: 30px 0; }
-    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
-    .product-card { text-decoration: none; color: #333; transition: .2s; cursor: pointer; }
-    .product-card:hover { transform: translateY(-4px); }
-    .product-img { width: 100%; height: 180px; object-fit: cover; border-radius: 6px; background: #eee; }
-    .product-name { font-weight: 600; font-size: 14px; margin-top: 8px; }
-    .product-price { font-size: 13px; color: #888; margin-top: 4px; }
-    .drawer { position: fixed; top: 0; right: -420px; width: 420px; height: 100%; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.15); transition: right .3s; z-index: 1000; }
-    .drawer.open { right: 0; }
-    .drawer-content { padding: 30px; position: relative; }
-    .drawer-close { position: absolute; top: 20px; right: 20px; cursor: pointer; font-size: 20px; border: none; background: transparent; }
-    .drawer-img { width: 100%; height: 240px; object-fit: cover; border-radius: 6px; background: #eee; }
-    .drawer-meta { margin-top: 20px; color: #555; line-height: 1.7; }
-    .drawer-actions { margin-top: 20px; display: flex; gap: 10px; }
-    .btn-primary, .btn-secondary { flex: 1; padding: 12px; cursor: pointer; }
-    .btn-primary { background: #000; color: #fff; border: none; }
-    .btn-secondary { border: 1px solid #ddd; background: #fff; }
-    .loader { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 24px; }
-    .skeleton { background: #eee; height: 180px; border-radius: 6px; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
-    .spinner-wrapper { display: none; justify-content: center; align-items: center; margin: 24px 0; }
-    .spinner { width: 32px; height: 32px; border: 3px solid #eee; border-top: 3px solid #333; border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
-    .login-modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:2000; }
-    .login-box { background:#fff; padding:30px; width:360px; border-radius:8px; }
-    .line-login-btn { margin-top: 16px; background:#06C755; color:#fff; border:none; padding:12px 20px; width:100%; cursor:pointer; }
-    .login-close { margin-top: 12px; color:#888; cursor:pointer; text-align:center; }
+    :root { --bg:#f7f4ef; --panel:#fff; --line:#e7e1d8; --text:#1c1a17; --muted:#6e675f; --accent:#b08a57; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
+    .container { display:flex; height:100vh; }
+    .sidebar { width:84px; background:#fbfaf8; padding:14px 10px; border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; }
+    .logo { width:42px; height:42px; border-radius:999px; border:1px solid #d9d0c3; color:#2a251f; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; letter-spacing:1px; margin:6px 0 16px; background:#fff; }
+    .logo span { display:none; }
+    .menu { list-style:none; padding:0; margin:0; }
+    .menu li { width:42px; height:42px; margin:8px 0; border-radius:14px; color:#5a534b; cursor:pointer; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e9e3da; }
+    .menu li.active { background:#1e1b17; color:#fff; border-color:#1e1b17; }
+    .menu li svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+    .divider { border-top:1px solid #ececec; margin:16px 0; width:100%; }
+    .newsletter { display:none; }
+
+    .main { flex:1; padding:12px 16px; overflow:auto; }
+    .user-bar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:4px 0 14px; }
+    .top-search { flex:1; background:#efebe5; border-radius:999px; height:44px; display:flex; align-items:center; padding:0 14px; min-width:220px; }
+    .top-search input { flex:1; border:none; background:transparent; font-size:15px; outline:none; }
+    .top-search-icon { color:#777; font-size:18px; margin-right:10px; }
+    .user-pill { font-size:12px; color:#555; border:1px solid #ddd; border-radius:999px; padding:4px 10px; background:#fff; }
+    .user-btn { border:1px solid #ccc; background:#fff; padding:5px 10px; border-radius:999px; cursor:pointer; font-size:12px; }
+
+    .hero { position:relative; height:300px; overflow:hidden; border-radius:20px; margin:0 4px 14px; }
+    .slide { position:absolute; inset:0; opacity:0; transition:opacity .8s; }
+    .slide.active { opacity:1; }
+    .slide img { width:100%; height:100%; object-fit:cover; }
+    .arrow { position:absolute; top:50%; transform:translateY(-50%); width:42px; height:42px; border:none; background:rgba(20,20,20,.45); color:#fff; cursor:pointer; }
+    .arrow.left { left:10px; } .arrow.right { right:10px; }
+    .hero-overlay { position:absolute; left:16px; bottom:16px; background:rgba(0,0,0,.45); color:#fff; padding:10px 14px; border-radius:12px; font-size:13px; letter-spacing:.2px; }
+    .store-notice { margin:0 4px 14px; background:#efe7dc; border:1px solid #e2d7c8; border-radius:14px; padding:10px 14px; font-size:13px; color:#5c5145; }
+    .store-notice strong { color:#3f352b; margin-right:6px; }
+
+    .title { margin:4px 0 14px; text-align:left; padding:0 4px; }
+    .title h1 { margin:0; font-size:24px; }
+    .title p { margin-top:6px; color:var(--muted); font-size:13px; }
+    .feed-tools { display:flex; justify-content:flex-start; margin:0 0 14px; padding:0 4px; }
+    .feed-tools select { border:none; border-radius:999px; padding:10px 14px; background:#efebe5; color:#463f37; }
+
+    .feed { column-count:5; column-gap:16px; }
+    .product-card { position:relative; display:inline-block; width:100%; margin:0 0 16px; text-decoration:none; color:inherit; cursor:pointer; break-inside:avoid; }
+    .product-img { width:100%; height:auto; border-radius:16px; display:block; background:#ecece8; }
+    .pin-save { position:absolute; top:10px; right:10px; width:36px; height:36px; border:none; border-radius:999px; padding:0; background:#e60023; color:#fff; opacity:0; transition:opacity .2s; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .pin-save svg { width:16px; height:16px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .product-card:hover .pin-save { opacity:1; }
+    .pin-meta { padding:8px 4px 0; }
+    .product-name { margin-top:0; font-size:14px; font-weight:700; line-height:1.35; min-height:0; }
+    .product-price { margin-top:3px; font-size:12px; color:#7a7a75; }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    .simple-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; }
+    .panel-card { background:#fff; border:1px solid #e3e3df; border-radius:10px; padding:12px; }
+    .panel-card img { width:100%; height:160px; object-fit:cover; border-radius:8px; background:#ecece8; }
+    .panel-card h4 { margin:10px 0 4px; font-size:14px; line-height:1.3; }
+    .panel-row { display:flex; gap:8px; margin-top:10px; }
+    .btn-small { border:1px solid #d2d2cc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
+    .btn-danger { border:1px solid #d97373; color:#aa2f2f; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
+    .collections-header { display:flex; gap:8px; margin-bottom:12px; }
+    .collections-header input { flex:1; border:1px solid #d9d9d3; border-radius:8px; padding:10px; }
+    .collection-create-footer { border-top:1px solid #ececec; padding:10px; display:flex; justify-content:center; background:#fff; }
+    .collection-plus-btn { width:34px; height:34px; border-radius:999px; border:1px solid #d8d1c6; background:#fff; color:#4b4339; font-size:22px; line-height:1; cursor:pointer; }
+    .quick-modal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1150; }
+    .quick-modal.open { display:flex; }
+    .quick-modal-box { width:min(92vw,420px); background:#fff; border-radius:12px; padding:16px; border:1px solid #e8dfd2; }
+    .quick-modal-box h4 { margin:0 0 10px; font-size:16px; }
+    .quick-modal-box input { width:100%; border:1px solid #d9d9d3; border-radius:10px; padding:10px; }
+    .quick-modal-box textarea { width:100%; border:1px solid #d9d9d3; border-radius:10px; padding:10px; min-height:120px; resize:vertical; margin-top:8px; }
+    .quick-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+    .dialog-message { color:#5c544a; font-size:14px; line-height:1.5; margin-top:4px; }
+    .btn-danger-solid { background:#b73a3a; color:#fff; border:1px solid #b73a3a; border-radius:8px; padding:8px 12px; cursor:pointer; }
+    .maps-shell { display:grid; grid-template-columns: 420px 1fr; gap:0; background:#fff; border:1px solid #ddd; border-radius:12px; overflow:hidden; min-height:620px; }
+    .maps-rail { background:#f3f5f6; border-right:1px solid #e2e4e5; padding:12px 8px; display:flex; flex-direction:column; gap:10px; align-items:center; }
+    .maps-rail-item { width:46px; height:46px; border-radius:10px; background:#fff; border:1px solid #dde1e2; display:flex; align-items:center; justify-content:center; font-size:11px; color:#5b6166; text-align:center; }
+    .maps-panel { background:#fff; border-right:1px solid #ececec; display:flex; flex-direction:column; }
+    .maps-tabs { display:flex; border-bottom:1px solid #ececec; }
+    .maps-tab { flex:1; text-align:center; padding:10px; font-size:13px; color:#777; }
+    .maps-tab.active { color:#111; border-bottom:3px solid #0f9d8f; font-weight:700; }
+    .maps-list { overflow:auto; flex:1; }
+    .maps-item { padding:12px 14px; border-bottom:1px solid #f0f0ec; cursor:pointer; }
+    .maps-item:hover { background:#f9fbfc; }
+    .maps-item.active { background:#eef7f8; }
+    .maps-item-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .maps-item-delete { width:22px; height:22px; border:none; color:#fff; background:#c74141; border-radius:999px; font-size:16px; line-height:1; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .maps-item-delete:hover { background:#a83434; }
+    .maps-item-title { font-size:15px; font-weight:600; }
+    .maps-item-sub { font-size:12px; color:#777; margin-top:4px; }
+    .maps-preview { padding:16px; background:#fafaf8; }
+    .maps-preview img { width:100%; max-height:320px; object-fit:cover; border-radius:10px; background:#ecece8; }
+    .maps-preview h3 { margin:12px 0 8px; }
+    .maps-empty { padding:18px; color:#6b6b66; font-size:13px; }
+    .maps-preview-actions { display:flex; gap:8px; margin-top:10px; }
+    .scene-meta-editor { margin-top:10px; display:flex; flex-direction:column; gap:10px; background:#fff; border:1px solid #e8dfd2; border-radius:12px; padding:12px; max-width:720px; }
+    .scene-meta-top { display:grid; grid-template-columns:minmax(180px,320px) auto; gap:10px; align-items:center; }
+    .scene-meta-editor textarea, .scene-meta-editor input { width:100%; border:1px solid #ddd5c8; border-radius:10px; padding:10px; font-size:13px; background:#fff; }
+    .scene-meta-editor textarea { min-height:116px; resize:vertical; line-height:1.55; }
+    .scene-save-btn { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+    .scene-save-hint { font-size:12px; color:#7b7267; }
+    .scene-level-header { padding:10px 12px; border-bottom:1px solid #ece4d7; background:#fff; }
+    .scene-back-btn { border:1px solid #ddd3c6; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer; font-size:12px; }
+    .scene-meta-line { margin-top:8px; font-size:12px; color:#665d53; line-height:1.5; }
+    .scene-inline-row { margin-top:8px; font-size:12px; color:#665d53; line-height:1.5; }
+    .scene-inline-label { color:#7a7167; margin-right:6px; }
+    .scene-inline-edit { display:inline-block; min-width:120px; padding:2px 6px; border-radius:6px; border:1px dashed transparent; cursor:text; }
+    .scene-inline-edit:empty::before { content:attr(data-placeholder); color:#9a9187; }
+    .scene-inline-edit:hover, .scene-inline-edit:focus { background:#f8f4ed; border-color:#d9cfbf; outline:none; }
+    .scene-inline-edit.multiline { display:block; margin-top:4px; min-height:44px; white-space:pre-wrap; }
+    .scene-product-list { display:flex; flex-direction:column; }
+    .scene-product-row { padding:10px 12px; border-bottom:1px solid #f1ece4; cursor:pointer; }
+    .scene-product-row.active { background:#eef7f8; }
+    .scene-product-title { font-size:14px; font-weight:600; }
+    .scene-product-sub { margin-top:3px; font-size:12px; color:#7a7268; }
+
+    .loader { margin-top:24px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:22px; }
+    .skeleton { height:180px; border-radius:8px; background:#ebebe7; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 0%{opacity:.55} 50%{opacity:1} 100%{opacity:.55} }
+    .spinner-wrapper { display:none; justify-content:center; margin:20px 0; }
+    .spinner { width:30px; height:30px; border:3px solid #ebebeb; border-top:3px solid #222; border-radius:50%; animation:spin 1s linear infinite; }
+    @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+    .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.24); opacity:0; pointer-events:none; transition:opacity .2s; z-index:980; }
+    .drawer-backdrop.open { opacity:1; pointer-events:auto; }
+    .drawer { position:fixed; top:0; right:-560px; width:560px; max-width:96vw; height:100vh; background:var(--panel); box-shadow:-14px 0 32px rgba(0,0,0,.16); transition:right .26s; z-index:1000; }
+    .drawer.open { right:0; }
+    .drawer-content { padding:20px 22px 26px; overflow-y:auto; height:100%; position:relative; }
+    .drawer-close { position:absolute; top:12px; right:12px; border:none; background:#fff; font-size:22px; cursor:pointer; }
+    .drawer-main-image { width:100%; height:280px; object-fit:cover; border-radius:10px; background:#efefec; }
+    .drawer-title { margin:14px 0 6px; font-size:26px; line-height:1.2; }
+    .drawer-sub { display:flex; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; }
+    .chip { border:1px solid var(--line); border-radius:16px; padding:3px 10px; background:#fafaf8; }
+    .desc { margin:12px 0 0; color:#4e4e49; line-height:1.5; }
+    .section-title { margin:20px 0 10px; font-size:14px; color:#474741; }
+    .price-stock-row { display:flex; gap:12px; margin-top:14px; }
+    .kv { flex:1; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+    .kv .k { font-size:12px; color:var(--muted); } .kv .v { margin-top:6px; font-size:17px; font-weight:700; }
+    .sku-list { display:flex; flex-direction:column; gap:8px; }
+    .sku-item { border:1px solid var(--line); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; background:#fff; }
+    .sku-item.active { border-color:#222; background:#f7f7f3; }
+    .sku-code { font-size:13px; font-weight:600; } .sku-meta { font-size:12px; color:var(--muted); margin-top:4px; }
+    .sku-price { font-weight:700; }
+    .scene-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .scene-thumb { width:100%; aspect-ratio:1/1; border-radius:8px; object-fit:cover; border:1px solid #ecece8; cursor:pointer; }
+    .drawer-actions { display:flex; gap:10px; margin-top:18px; }
+    .drawer-collection-picker { position:relative; margin-top:8px; }
+    .drawer-collection-trigger { width:100%; border:1px solid #d8d8d3; border-radius:10px; padding:10px 12px; background:#fff; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+    .drawer-collection-pop { position:absolute; left:0; right:0; top:calc(100% + 8px); border:1px solid #d8d8d3; border-radius:12px; background:#fff; box-shadow:0 10px 24px rgba(0,0,0,.12); display:none; z-index:40; overflow:hidden; }
+    .drawer-collection-pop.open { display:block; }
+    .drawer-collection-list { max-height:220px; overflow:auto; }
+    .drawer-collection-item { padding:11px 12px; border-bottom:1px solid #f1f1ed; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .drawer-collection-item:hover { background:#f8fafa; }
+    .drawer-collection-item.active { background:#e9f6f8; }
+    .drawer-collection-left { display:flex; align-items:center; gap:8px; min-width:0; }
+    .drawer-collection-check { width:18px; height:18px; border:1px solid #b8c6cb; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; background:#fff; }
+    .drawer-collection-item.active .drawer-collection-check { background:#0f9d8f; border-color:#0f9d8f; }
+    .drawer-collection-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .drawer-create-wrap { display:none; gap:8px; padding:10px; border-top:1px solid #efefea; }
+    .drawer-create-wrap.open { display:flex; }
+    .drawer-create-wrap input { flex:1; border:1px solid #d8d8d3; border-radius:8px; padding:9px; }
+    .drawer-collection-footer { width:100%; border:none; border-top:1px solid #efefea; background:#d8eef5; color:#1d4f5e; font-weight:700; padding:12px; cursor:pointer; }
+    .btn-primary,.btn-secondary { flex:1; padding:12px 14px; cursor:pointer; border-radius:8px; }
+    .btn-primary { background:#191919; color:#fff; border:none; } .btn-primary:disabled { background:#9a9a96; cursor:not-allowed; }
+    .btn-secondary { background:#fff; border:1px solid #d7d7d1; }
+
+    .login-modal { position:fixed; inset:0; background:rgba(0,0,0,.42); display:none; align-items:center; justify-content:center; z-index:1100; }
+    .login-box { width:360px; background:#fff; border-radius:8px; padding:28px; }
+    .login-input { width:100%; padding:11px 12px; border:1px solid #d9d9d3; margin-top:10px; border-radius:6px; }
+    .line-login-btn { width:100%; margin-top:14px; padding:12px; background:#06C755; color:#fff; border:none; cursor:pointer; border-radius:6px; }
+    .google-login-btn { width:100%; margin-top:10px; padding:12px; background:#fff; color:#1f1f1f; border:1px solid #d4d4cf; cursor:pointer; border-radius:6px; }
+    .login-helper { margin-top:10px; color:#777; font-size:12px; }
+    .login-close { text-align:center; margin-top:12px; color:#767672; cursor:pointer; }
+
+    .scene-modal { position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; z-index:1200; padding:24px; }
+    .scene-modal.open { display:flex; }
+    .scene-modal-img { max-width:min(92vw,1200px); max-height:88vh; border-radius:10px; object-fit:contain; background:#111; }
+    .scene-modal-close { position:absolute; top:18px; right:22px; border:none; background:transparent; color:#fff; font-size:34px; cursor:pointer; }
+
+    @media (max-width:1240px) { .feed { column-count:4; } }
+    @media (max-width:980px) { .sidebar { display:none; } .main { padding:12px; } .feed { column-count:3; } .user-bar { gap:8px; } .drawer { width:100vw; } .drawer-main-image { height:220px; } }
+    @media (max-width:680px) { .feed { column-count:2; } .top-search { height:40px; min-width:0; } .hero { height:220px; } }
   </style>
 </head>
 <body>
+  <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
   <div id="productDrawer" class="drawer">
     <div class="drawer-content">
       <button class="drawer-close" onclick="closeDrawer()">✕</button>
-      <img id="drawerImage" class="drawer-img" alt="product" />
-      <h2 id="drawerTitle"></h2>
-      <div class="drawer-meta">
-        <div>SKU: <span id="drawerSku"></span></div>
-        <div>庫存: <span id="drawerStock"></span></div>
+      <img id="drawerImage" class="drawer-main-image" alt="product" />
+      <h2 id="drawerTitle" class="drawer-title"></h2>
+      <div class="drawer-sub">
+        <span id="drawerBrand" class="chip"></span>
+        <span id="drawerCategory" class="chip"></span>
+        <span id="drawerStockStatus" class="chip"></span>
       </div>
-      <div class="drawer-actions">
-        <button id="stockBtn" class="btn-primary">加入到店查看清單</button>
-        <button id="wishBtn" class="btn-secondary">加入收藏清單</button>
+      <p id="drawerDesc" class="desc"></p>
+      <div class="price-stock-row">
+        <div class="kv"><div class="k">價格區間</div><div id="drawerPriceRange" class="v">-</div></div>
+        <div class="kv"><div class="k">選中 SKU 庫存</div><div id="drawerSkuStock" class="v">-</div></div>
+      </div>
+      <h3 class="section-title">SKU 選擇</h3>
+      <div id="drawerSkuList" class="sku-list"></div>
+      <h3 class="section-title">場景照</h3>
+      <div id="drawerSceneGrid" class="scene-grid"></div>
+      <h3 class="section-title">加入場景清單</h3>
+      <div class="drawer-collection-picker" id="drawerCollectionPicker">
+        <button id="drawerCollectionTrigger" class="drawer-collection-trigger" onclick="toggleDrawerCollectionMenu()">
+          <span id="drawerCollectionLabel">請先登入</span>
+          <span>▾</span>
+        </button>
+        <div id="drawerCollectionMenu" class="drawer-collection-pop">
+          <div id="drawerCollectionList" class="drawer-collection-list"></div>
+          <div id="drawerCreateWrap" class="drawer-create-wrap">
+            <input id="drawerNewCollectionTitle" placeholder="新場景名稱" />
+            <button class="btn-small" onclick="createCollectionFromDrawer()">建立</button>
+          </div>
+          <button id="drawerCreateToggleBtn" class="drawer-collection-footer" onclick="toggleDrawerCreateRow()">＋ 新增場景清單</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="container">
     <div class="sidebar">
-      <div class="logo">D<span>A</span>VID F<span>I</span>ELD</div>
+      <div class="logo">DF</div>
       <ul class="menu">
-        <li>HOME</li>
-        <li>新品推薦</li>
-        <li>居家靈感</li>
-        <li>場景收藏</li>
-        <li>門市清單</li>
+        <li id="menuFeed" class="active" onclick="switchView('feed')" title="首頁">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M6.5 9.5V21h11V9.5"/></svg>
+        </li>
+        <li onclick="switchView('feed')" title="推薦">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+        </li>
+        <li onclick="switchView('feed')" title="靈感">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.3L20 9l-4 4 .9 6-4.9-2.6L7.1 19 8 13 4 9l5.4-.7z"/></svg>
+        </li>
+        <li id="menuCollections" onclick="switchView('collections')" title="場景收藏">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2z"/></svg>
+        </li>
       </ul>
       <div class="divider"></div>
-      <div class="newsletter">
-        訂閱電子報<br />
-        <input placeholder="請輸入電子郵件" />
-        <button>訂閱</button>
-      </div>
+      <div class="newsletter">訂閱電子報<br /><input placeholder="請輸入電子郵件" /><button>訂閱</button></div>
     </div>
 
-    <div class="main">
+    <div class="main" id="mainScroll">
+      <div class="user-bar">
+        <div class="top-search"><span class="top-search-icon">⌕</span><input placeholder="Search" /></div>
+        <div id="userPill" class="user-pill">未登入</div>
+        <button id="authActionBtn" class="user-btn" onclick="handleAuthAction()">登入</button>
+      </div>
+      <section id="feedSection" class="view-section active">
       <div class="hero">
         <div class="slide active"><img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" alt="hero1" /></div>
         <div class="slide"><img src="https://images.unsplash.com/photo-1493666438817-866a91353ca9" alt="hero2" /></div>
         <div class="slide"><img src="https://images.unsplash.com/photo-1519710164239-da123dc03ef4" alt="hero3" /></div>
-        <button class="arrow left" onclick="prevSlide()">‹</button>
-        <button class="arrow right" onclick="nextSlide()">›</button>
+        <button class="arrow left" onclick="prevSlide()">‹</button><button class="arrow right" onclick="nextSlide()">›</button>
+        <div class="hero-overlay">實體門市本週新品到貨中</div>
       </div>
-
-      <div class="title">
-        <h1>精選家具</h1>
-        <p>探索最新商品並加入收藏或到店查看清單</p>
+      <div class="store-notice"><strong>門市公告</strong> 台北門市 3/15-3/22 舉辦春季佈置展，歡迎預約到店體驗。</div>
+      <div class="title"><h1>精選家具</h1><p>探索新品、挑選 SKU、直接加入收藏與門市清單</p></div>
+      <div class="feed-tools">
+        <select id="feedCategorySelect" onchange="onFeedCategoryChange()">
+          <option value="">全部分類</option>
+        </select>
       </div>
-
       <div id="productFeed" class="feed"></div>
       <div id="loader" class="loader"></div>
       <div id="spinner" class="spinner-wrapper"><div class="spinner"></div></div>
+      </section>
+
+      <section id="collectionsSection" class="view-section">
+        <div class="maps-shell">
+          <div class="maps-panel">
+            <div id="collectionsList" class="maps-list"></div>
+            <div id="collectionsFooter" class="collection-create-footer">
+              <button class="collection-plus-btn" onclick="openCollectionCreateModal()">+</button>
+            </div>
+          </div>
+          <div id="collectionPreview" class="maps-preview">
+            <h3>尚未選擇場景</h3>
+            <div style="font-size:13px;color:#777;">請從左側選擇一個場景清單。</div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -111,158 +291,936 @@
     <div class="login-box">
       <h3>登入後可使用完整功能</h3>
       <p>登入後可以：</p>
-      <ul>
-        <li>加入收藏清單</li>
-        <li>建立到店查看清單</li>
-        <li>同步你的場景收藏</li>
-      </ul>
-      <button class="line-login-btn" onclick="lineLogin()">LINE 登入</button>
+      <ul><li>建立場景清單</li><li>將商品加入場景</li><li>同步你的場景收藏</li></ul>
+      <input id="loginDisplayName" class="login-input" placeholder="輸入你的名稱" />
+      <input id="loginEmail" class="login-input" placeholder="電子郵件（可選）" />
+      <button class="line-login-btn" onclick="startOAuth('line')">使用 LINE 登入</button>
+      <button class="google-login-btn" onclick="startOAuth('google')">使用 Google 登入</button>
+      <button class="google-login-btn" onclick="loginWithProfile()">測試登入（本地）</button>
+      <div class="login-helper">正式環境請在後端設定 OAuth Client 參數。</div>
       <div class="login-close" onclick="closeLogin()">稍後再說</div>
+    </div>
+  </div>
+
+  <div id="sceneModal" class="scene-modal" onclick="closeSceneModal()">
+    <button class="scene-modal-close" onclick="closeSceneModal()">✕</button>
+    <img id="sceneModalImage" class="scene-modal-img" alt="場景大圖" onclick="event.stopPropagation()" />
+  </div>
+
+  <div id="collectionCreateModal" class="quick-modal" onclick="closeCollectionCreateModal()">
+    <div class="quick-modal-box" onclick="event.stopPropagation()">
+      <h4>新增場景清單</h4>
+      <input id="collectionCreateInput" placeholder="輸入場景名稱" />
+      <div class="quick-modal-actions">
+        <button class="btn-small" onclick="closeCollectionCreateModal()">取消</button>
+        <button class="btn-small" onclick="createCollection()">建立</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sceneMetaModal" class="quick-modal" onclick="closeSceneMetaModal()">
+    <div class="quick-modal-box" onclick="event.stopPropagation()">
+      <h4>編輯場景資訊</h4>
+      <input id="sceneMetaBudgetInput" placeholder="場景預算，例如：NT$ 120,000" />
+      <textarea id="sceneMetaDescInput" placeholder="描述你的場景風格與需求..."></textarea>
+      <div class="quick-modal-actions">
+        <button class="btn-small" onclick="closeSceneMetaModal()">取消</button>
+        <button class="btn-small" onclick="saveSceneMetaFromModal()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appDialog" class="quick-modal" onclick="closeAppDialog(false)">
+    <div class="quick-modal-box" onclick="event.stopPropagation()">
+      <h4 id="appDialogTitle">提示</h4>
+      <div id="appDialogMessage" class="dialog-message"></div>
+      <div class="quick-modal-actions">
+        <button id="appDialogCancelBtn" class="btn-small" onclick="closeAppDialog(false)">取消</button>
+        <button id="appDialogConfirmBtn" class="btn-small" onclick="closeAppDialog(true)">確認</button>
+      </div>
     </div>
   </div>
 
   <script>
     let slides = document.querySelectorAll('.slide');
-    let index = 0;
-    function showSlide(i){ slides.forEach(s => s.classList.remove('active')); slides[i].classList.add('active'); }
-    function nextSlide(){ index = (index + 1) % slides.length; showSlide(index); }
-    function prevSlide(){ index = (index - 1 + slides.length) % slides.length; showSlide(index); }
+    let heroIndex = 0;
+    function showSlide(i){ slides.forEach(s=>s.classList.remove('active')); slides[i].classList.add('active'); }
+    function nextSlide(){ heroIndex = (heroIndex+1)%slides.length; showSlide(heroIndex); }
+    function prevSlide(){ heroIndex = (heroIndex-1+slides.length)%slides.length; showSlide(heroIndex); }
     setInterval(nextSlide, 4000);
 
     const API_PREFIX = '/api/v1';
-    const USER_ID = 1;
-    let cursor = 0;
-    let loading = false;
-    const limit = 20;
-    let loadedItems = 0;
-    let userLoggedIn = false;
+    const FEED_LIMIT = 20;
+    const AUTH_TOKEN_KEY = 'furni_auth_token';
+    let cursor = 0, loading = false, loadedItems = 0;
+    let selectedFeedCategory = '';
+    let activeView = 'feed';
+    let userLoggedIn = false, loginPromptShown = false;
+    let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    let currentUser = null, currentProduct = null, selectedVariant = null;
+    let selectedCollectionId = null;
+    let collectionsData = [];
+    let selectedCollectionDetailId = null;
+    let selectedCollectionItemId = null;
+    let collectionListLevel = 'collections';
+    let collectionItemsCache = {};
+    let productDetailCache = {};
+    let drawerCollections = [];
+    let drawerCreateOpen = false;
+    let drawerCollectionMembership = {};
+    let drawerCollectionMutating = false;
+    let appDialogResolver = null;
+    let sceneMetaSaveTimer = null;
+    let sceneMetaEditingCollectionId = null;
 
-    function showLoader(){
-      document.getElementById('spinner').style.display = 'flex';
-      document.getElementById('loader').innerHTML = Array(8).fill('<div class="skeleton"></div>').join('');
+    function formatPrice(v){ if(v===null||v===undefined||v==='') return '-'; return `$${Number(v).toLocaleString('en-US')}`; }
+    function showLoader(){ document.getElementById('spinner').style.display='flex'; document.getElementById('loader').innerHTML=Array(8).fill('<div class="skeleton"></div>').join(''); }
+    function hideLoader(){ document.getElementById('spinner').style.display='none'; document.getElementById('loader').innerHTML=''; }
+
+    async function apiFetch(path, options={}){
+      const headers = options.headers ? { ...options.headers } : {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      return fetch(path, { ...options, headers });
     }
-    function hideLoader(){
-      document.getElementById('spinner').style.display = 'none';
-      document.getElementById('loader').innerHTML = '';
+
+    function refreshUserBar(){
+      const pill=document.getElementById('userPill'), btn=document.getElementById('authActionBtn');
+      if(userLoggedIn && currentUser){ pill.textContent=`Hi, ${currentUser.display_name}`; btn.textContent='登出'; }
+      else { pill.textContent='未登入'; btn.textContent='登入'; }
+    }
+
+    function switchView(view){
+      activeView = view;
+      document.getElementById('feedSection').classList.toggle('active', view==='feed');
+      document.getElementById('collectionsSection').classList.toggle('active', view==='collections');
+
+      document.getElementById('menuFeed').classList.toggle('active', view==='feed');
+      document.getElementById('menuCollections').classList.toggle('active', view==='collections');
+
+      if(view==='collections') loadCollections();
+    }
+
+    function openCollectionCreateModal(){
+      const modal = document.getElementById('collectionCreateModal');
+      if(modal) modal.classList.add('open');
+      const input = document.getElementById('collectionCreateInput');
+      if(input){ input.value=''; setTimeout(()=>input.focus(), 0); }
+    }
+
+    function closeCollectionCreateModal(){
+      const modal = document.getElementById('collectionCreateModal');
+      if(modal) modal.classList.remove('open');
+    }
+
+    function openSceneMetaModal(collectionId){
+      const collection = collectionsData.find(c => c.id === collectionId);
+      if(!collection) return;
+      const meta = parseSceneMeta(collection.description || '');
+      sceneMetaEditingCollectionId = collectionId;
+      const budgetEl = document.getElementById('sceneMetaBudgetInput');
+      const descEl = document.getElementById('sceneMetaDescInput');
+      if(budgetEl) budgetEl.value = normalizeDigitsOnly(meta.budget || '');
+      if(descEl) descEl.value = meta.description || '';
+      const modal = document.getElementById('sceneMetaModal');
+      if(modal) modal.classList.add('open');
+      if(budgetEl) setTimeout(() => budgetEl.focus(), 0);
+    }
+
+    function closeSceneMetaModal(){
+      const modal = document.getElementById('sceneMetaModal');
+      if(modal) modal.classList.remove('open');
+      sceneMetaEditingCollectionId = null;
+    }
+
+    function openAppDialog({ title='提示', message='', confirmText='確認', cancelText='取消', danger=false, showCancel=true } = {}){
+      const modal = document.getElementById('appDialog');
+      const titleEl = document.getElementById('appDialogTitle');
+      const msgEl = document.getElementById('appDialogMessage');
+      const cancelBtn = document.getElementById('appDialogCancelBtn');
+      const confirmBtn = document.getElementById('appDialogConfirmBtn');
+      if(!modal || !titleEl || !msgEl || !cancelBtn || !confirmBtn) return Promise.resolve(false);
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      confirmBtn.textContent = confirmText;
+      cancelBtn.textContent = cancelText;
+      cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+      confirmBtn.className = danger ? 'btn-danger-solid' : 'btn-small';
+      modal.classList.add('open');
+      return new Promise((resolve) => { appDialogResolver = resolve; });
+    }
+
+    function closeAppDialog(result){
+      const modal = document.getElementById('appDialog');
+      if(modal) modal.classList.remove('open');
+      if(appDialogResolver){
+        const resolve = appDialogResolver;
+        appDialogResolver = null;
+        resolve(!!result);
+      }
+    }
+
+    function uiAlert(message, title='提示'){
+      return openAppDialog({ title, message, confirmText:'知道了', showCancel:false });
+    }
+
+    function uiConfirm(message, title='請確認'){
+      return openAppDialog({ title, message, confirmText:'確認', cancelText:'取消', danger:true, showCancel:true });
+    }
+
+    function consumeTokenFromUrl(){
+      const url = new URL(window.location.href);
+      const token = url.searchParams.get('token');
+      if(!token) return;
+      authToken = token;
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      url.searchParams.delete('token');
+      url.searchParams.delete('provider');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+    }
+
+    async function initAuth(){
+      if(!authToken){ userLoggedIn=false; currentUser=null; refreshUserBar(); return; }
+      try {
+        const res = await apiFetch(`${API_PREFIX}/auth/me`);
+        if(!res.ok) throw new Error('auth expired');
+        currentUser = await res.json();
+        userLoggedIn = true;
+      } catch {
+        authToken=''; localStorage.removeItem(AUTH_TOKEN_KEY); currentUser=null; userLoggedIn=false;
+      }
+      refreshUserBar();
+      if(userLoggedIn && activeView==='collections') loadCollections();
+      if(userLoggedIn) loadDrawerCollections();
+    }
+
+    function escapeHtml(text){
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
+    }
+
+    function parseSceneMeta(rawDescription){
+      const raw = (rawDescription || '').trim();
+      const lines = raw.split('\n');
+      let budget = '';
+      if(lines.length && lines[0].startsWith('[BUDGET]')){
+        budget = lines[0].replace('[BUDGET]', '').trim();
+        lines.shift();
+      }
+      return { budget, description: lines.join('\n').trim() };
+    }
+
+    function composeSceneMeta(description, budget){
+      const d = (description || '').trim();
+      const b = (budget || '').trim();
+      if(!b) return d;
+      return `[BUDGET] ${b}${d ? `\n${d}` : ''}`;
+    }
+
+    async function fetchProductDetail(productId){
+      if(productDetailCache[productId]) return productDetailCache[productId];
+      const res = await fetch(`${API_PREFIX}/products/${productId}`);
+      if(!res.ok) throw new Error(`product fetch failed: ${productId}`);
+      const data = await res.json();
+      productDetailCache[productId] = data;
+      return data;
+    }
+
+    async function hydrateCollectionProducts(collectionId){
+      const items = collectionItemsCache[collectionId] || [];
+      const missingIds = [...new Set(items.map(i => i.product_id).filter(id => id && !productDetailCache[id]))];
+      if(!missingIds.length) return;
+      await Promise.all(missingIds.map(async (id) => {
+        try { await fetchProductDetail(id); } catch {}
+      }));
+    }
+
+    function renderCollectionPreview(collection, items){
+      const preview = document.getElementById('collectionPreview');
+      if(!collection){
+        preview.innerHTML = '<h3>尚未選擇場景</h3><div style="font-size:13px;color:#777;">請從左側選擇一個場景清單。</div>';
+        return;
+      }
+      if(collectionListLevel !== 'products'){
+        preview.innerHTML = `<h3>${escapeHtml(collection.title || '')}</h3><div style="font-size:13px;color:#777;">請點左側場景，進入商品列表。</div>`;
+        return;
+      }
+
+      const rows = items || [];
+      const selectedItem = rows.find(i => i.id === selectedCollectionItemId) || null;
+      const product = selectedItem ? productDetailCache[selectedItem.product_id] : null;
+
+      if(!rows.length){
+        preview.innerHTML = `
+          <h3>${escapeHtml(collection.title || '')}</h3>
+          <div class="maps-empty">此場景尚無商品，請從商品卡片點 Save 加入。</div>
+        `;
+        return;
+      }
+
+      if(!selectedItem){
+        preview.innerHTML = '<div class="maps-empty">請從左側選擇商品。</div>';
+        return;
+      }
+
+      if(!product){
+        preview.innerHTML = '<div class="maps-empty">商品資訊載入中...</div>';
+        return;
+      }
+
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const prices = variants.map(v => Number(v.price || 0)).filter(v => !Number.isNaN(v));
+      const priceText = prices.length
+        ? (Math.min(...prices) === Math.max(...prices) ? formatPrice(Math.min(...prices)) : `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`)
+        : '-';
+      const variantRows = variants.slice(0, 6).map(v => `
+        <div class="panel-card" style="padding:8px 10px;">
+          <div style="font-size:12px;font-weight:600;">${escapeHtml(v.variant_code || `SKU-${v.id}`)}</div>
+          <div style="font-size:12px;color:#6f665c;">庫存 ${Number(v.stock || 0)} / ${formatPrice(v.price)}</div>
+        </div>
+      `).join('');
+
+      preview.innerHTML = `
+        <img src="${escapeHtml(product.cover_image_url || '')}" alt="${escapeHtml(product.name || '')}">
+        <h3>${escapeHtml(product.name || '')}</h3>
+        <div style="font-size:13px;color:#6e665d;">${escapeHtml(product.brand || '品牌未設定')} ・ ${escapeHtml(product.category || '分類未設定')}</div>
+        <div style="margin-top:10px;font-size:14px;"><strong>價格：</strong>${priceText}</div>
+        <p style="margin-top:10px;color:#544d45;line-height:1.55;">${escapeHtml(product.description || '暫無描述')}</p>
+        <div class="panel-row">
+          <button class="btn-danger" onclick="removeCollectionItem(${collection.id}, ${selectedItem.id})">移除此商品</button>
+        </div>
+        <h4 style="margin:14px 0 8px;">SKU</h4>
+        <div class="simple-grid">
+          ${variantRows || '<div class="maps-empty">無 SKU 資訊。</div>'}
+        </div>
+      `;
+    }
+
+    async function loadCollectionItems(collectionId){
+      const res = await apiFetch(`${API_PREFIX}/collections/${collectionId}/items`);
+      const data = await res.json();
+      collectionItemsCache[collectionId] = data.items || [];
+      await hydrateCollectionProducts(collectionId);
+      if(selectedCollectionDetailId === collectionId){
+        const selected = collectionsData.find(c => c.id === collectionId) || null;
+        const selectedRows = collectionItemsCache[collectionId] || [];
+        if(selectedRows.length && !selectedRows.some(i => i.id === selectedCollectionItemId)){
+          selectedCollectionItemId = selectedRows[0].id;
+        }
+        if(!selectedRows.length) selectedCollectionItemId = null;
+        renderCollectionPreview(selected, collectionItemsCache[collectionId]);
+        renderCollectionsList();
+      }
+    }
+
+    function scheduleCollectionMetaSave(collectionId){
+      const hint = document.getElementById('sceneMetaSaveHint');
+      if(hint) hint.textContent = '儲存中...';
+      if(sceneMetaSaveTimer) clearTimeout(sceneMetaSaveTimer);
+      sceneMetaSaveTimer = setTimeout(() => { saveCollectionMeta(collectionId, { refresh: false, silent: true }); }, 700);
+    }
+
+    function normalizeDigitsOnly(value){
+      return String(value || '').replace(/[^\d]/g, '');
+    }
+
+    function onBudgetInlineInput(event, collectionId){
+      const el = event && event.currentTarget ? event.currentTarget : null;
+      if(el){
+        const cleaned = normalizeDigitsOnly(el.innerText);
+        if(el.innerText !== cleaned) el.innerText = cleaned;
+      }
+      scheduleCollectionMetaSave(collectionId);
+    }
+
+    async function saveCollectionMeta(collectionId, options = {}){
+      if(!userLoggedIn || !currentUser) return showLogin();
+      const descEl = document.getElementById('sceneDescInput') || document.getElementById('sceneDescInline');
+      const budgetEl = document.getElementById('sceneBudgetInput') || document.getElementById('sceneBudgetInline');
+      const descValue = descEl ? (('value' in descEl) ? descEl.value : descEl.innerText) : '';
+      const budgetValue = budgetEl ? (('value' in budgetEl) ? budgetEl.value : budgetEl.innerText) : '';
+      const budgetDigits = normalizeDigitsOnly(budgetValue);
+      if(budgetEl){
+        if('value' in budgetEl) budgetEl.value = budgetDigits;
+        else budgetEl.innerText = budgetDigits;
+      }
+      const description = composeSceneMeta(descValue, budgetDigits);
+      await apiFetch(`${API_PREFIX}/collections/${collectionId}`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          description
+        })
+      });
+      const target = collectionsData.find(c => c.id === collectionId);
+      if(target) target.description = description;
+      if(options.refresh === false){
+        const hint = document.getElementById('sceneMetaSaveHint');
+        if(hint) hint.textContent = '已自動儲存';
+        return;
+      }
+      await loadCollections();
+      await loadCollectionItems(collectionId);
+    }
+
+    function onInlineBudgetKeydown(event, collectionId){
+      if(event.key === 'Enter'){
+        event.preventDefault();
+        event.currentTarget.blur();
+        saveCollectionMeta(collectionId, { refresh: false, silent: true });
+      }
+    }
+
+    async function saveSceneMetaFromModal(){
+      if(!userLoggedIn || !currentUser) return showLogin();
+      const collectionId = sceneMetaEditingCollectionId;
+      if(!collectionId) return;
+      const budgetEl = document.getElementById('sceneMetaBudgetInput');
+      const descEl = document.getElementById('sceneMetaDescInput');
+      const budget = budgetEl ? normalizeDigitsOnly(budgetEl.value) : '';
+      const description = descEl ? descEl.value : '';
+      const composed = composeSceneMeta(description, budget);
+      await apiFetch(`${API_PREFIX}/collections/${collectionId}`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ description: composed })
+      });
+      const target = collectionsData.find(c => c.id === collectionId);
+      if(target) target.description = composed;
+      closeSceneMetaModal();
+      renderCollectionsList();
+    }
+
+    async function deleteCollection(collectionId, event){
+      if(event){
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if(!userLoggedIn || !currentUser) return showLogin();
+      const ok = await uiConfirm('確定要刪除這個場景嗎？刪除後無法復原。', '刪除場景');
+      if(!ok) return;
+      const res = await apiFetch(`${API_PREFIX}/collections/${collectionId}?user_id=${currentUser.user_id}`, { method:'DELETE' });
+      if(!res.ok){
+        let detail = '';
+        try{
+          const data = await res.json();
+          detail = data && data.detail ? `：${data.detail}` : '';
+        }catch{}
+        if(res.status === 404){
+          await uiAlert(`刪除 API 尚不可用（404）${detail}，請先重啟後端 Server。`, '刪除失敗');
+        } else {
+          await uiAlert(`刪除失敗 (${res.status})${detail}`, '刪除失敗');
+        }
+        return;
+      }
+      delete collectionItemsCache[collectionId];
+      if(selectedCollectionDetailId === collectionId){
+        selectedCollectionDetailId = null;
+        selectedCollectionItemId = null;
+        collectionListLevel = 'collections';
+      }
+      await loadCollections();
+      await uiAlert('場景已刪除。', '完成');
+    }
+
+    function renderCollectionsList(){
+      const listEl = document.getElementById('collectionsList');
+      const footerEl = document.getElementById('collectionsFooter');
+      const filtered = collectionsData.slice();
+      if(footerEl) footerEl.style.display = collectionListLevel === 'collections' ? 'flex' : 'none';
+
+      if(!filtered.length){
+        listEl.innerHTML = '<div class="maps-empty">目前沒有符合條件的場景。</div>';
+        renderCollectionPreview(null, []);
+        return;
+      }
+
+      if(collectionListLevel === 'collections'){
+        listEl.innerHTML = '';
+        filtered.forEach(c => {
+          const sceneMeta = parseSceneMeta(c.description || '');
+          const sub = [sceneMeta.budget ? `預算 ${sceneMeta.budget}` : '', sceneMeta.description || '無描述'].filter(Boolean).join(' ・ ');
+          const row = document.createElement('div');
+          row.className = `maps-item${c.id === selectedCollectionDetailId ? ' active' : ''}`;
+          row.onclick = () => selectCollection(c.id);
+          row.innerHTML = `
+            <div class="maps-item-head">
+              <div class="maps-item-title">${escapeHtml(c.title || '')}</div>
+              <button class="maps-item-delete" onclick="deleteCollection(${c.id}, event)">-</button>
+            </div>
+            <div class="maps-item-sub">${escapeHtml(sub)}</div>
+          `;
+          listEl.appendChild(row);
+        });
+
+        const selected = filtered.find(c => c.id === selectedCollectionDetailId) || filtered[0];
+        selectedCollectionDetailId = selected ? selected.id : null;
+        selectedCollectionItemId = null;
+        renderCollectionPreview(selected || null, selected ? (collectionItemsCache[selected.id] || []) : []);
+        return;
+      }
+
+      const selectedCollection = filtered.find(c => c.id === selectedCollectionDetailId) || filtered[0];
+      selectedCollectionDetailId = selectedCollection ? selectedCollection.id : null;
+      const items = selectedCollection ? (collectionItemsCache[selectedCollection.id] || []) : [];
+      if(items.length && !items.some(i => i.id === selectedCollectionItemId)) selectedCollectionItemId = items[0].id;
+      if(!items.length) selectedCollectionItemId = null;
+      const selectedMeta = parseSceneMeta(selectedCollection ? (selectedCollection.description || '') : '');
+
+      const headerHtml = `
+        <div class="scene-level-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <button class="scene-back-btn" onclick="backToCollectionsList()">← 場景清單</button>
+          </div>
+          <div class="maps-item-title" style="margin-top:8px;">${escapeHtml(selectedCollection ? (selectedCollection.title || '') : '')}</div>
+          <div class="scene-inline-row">
+            <span class="scene-inline-label">預算：</span>
+            <span id="sceneBudgetInline" class="scene-inline-edit" data-placeholder="未設定" contenteditable="true" oninput="onBudgetInlineInput(event, ${selectedCollection.id})" onblur="saveCollectionMeta(${selectedCollection.id}, { refresh: false, silent: true })" onkeydown="onInlineBudgetKeydown(event, ${selectedCollection.id})">${escapeHtml(normalizeDigitsOnly(selectedMeta.budget || ''))}</span>
+          </div>
+          <div class="scene-inline-row">
+            <span class="scene-inline-label">描述：</span>
+            <div id="sceneDescInline" class="scene-inline-edit multiline" data-placeholder="未設定" contenteditable="true" oninput="scheduleCollectionMetaSave(${selectedCollection.id})" onblur="saveCollectionMeta(${selectedCollection.id}, { refresh: false, silent: true })">${(escapeHtml(selectedMeta.description || '')).replace(/\n/g, '<br>')}</div>
+          </div>
+          <div id="sceneMetaSaveHint" class="scene-save-hint"></div>
+        </div>
+      `;
+      const rowsHtml = items.map(i => {
+        const p = productDetailCache[i.product_id];
+        const title = p ? (p.name || `Product #${i.product_id}`) : `Product #${i.product_id}`;
+        const sub = p ? `${p.brand || '品牌未設定'} ・ ${p.category || '分類未設定'}` : '載入中...';
+        const activeCls = i.id === selectedCollectionItemId ? ' active' : '';
+        return `
+          <div class="scene-product-row${activeCls}" onclick="selectCollectionItem(${i.id})">
+            <div class="scene-product-title">${escapeHtml(title)}</div>
+            <div class="scene-product-sub">${escapeHtml(sub)}</div>
+          </div>
+        `;
+      }).join('');
+
+      listEl.innerHTML = `${headerHtml}<div class="scene-product-list">${rowsHtml || '<div class="maps-empty">此場景尚無商品。</div>'}</div>`;
+      renderCollectionPreview(selectedCollection || null, items);
+    }
+
+    async function selectCollection(collectionId){
+      selectedCollectionDetailId = collectionId;
+      selectedCollectionItemId = null;
+      collectionListLevel = 'products';
+      renderCollectionsList();
+      if(!collectionItemsCache[collectionId]){
+        await loadCollectionItems(collectionId);
+      } else {
+        await hydrateCollectionProducts(collectionId);
+        const rows = collectionItemsCache[collectionId] || [];
+        selectedCollectionItemId = rows.length ? rows[0].id : null;
+        renderCollectionsList();
+      }
+    }
+
+    function backToCollectionsList(){
+      collectionListLevel = 'collections';
+      selectedCollectionItemId = null;
+      renderCollectionsList();
+    }
+
+    async function selectCollectionItem(itemId){
+      selectedCollectionItemId = itemId;
+      const collectionId = selectedCollectionDetailId;
+      const rows = collectionItemsCache[collectionId] || [];
+      const item = rows.find(i => i.id === itemId);
+      if(item && !productDetailCache[item.product_id]){
+        try{ await fetchProductDetail(item.product_id); } catch {}
+      }
+      renderCollectionsList();
+    }
+
+    async function removeCollectionItem(collectionId, itemId){
+      await apiFetch(`${API_PREFIX}/collections/${collectionId}/items/${itemId}`, { method:'DELETE' });
+      delete collectionItemsCache[collectionId];
+      if(selectedCollectionDetailId === collectionId){
+        await loadCollectionItems(collectionId);
+      }
+    }
+
+    function updateDrawerCollectionLabel(){
+      const label = document.getElementById('drawerCollectionLabel');
+      if(!label) return;
+      if(!userLoggedIn || !currentUser){ label.textContent = '請先登入'; return; }
+      if(!drawerCollections.length){ label.textContent = '尚無場景，請先新增'; return; }
+      const includedCount = drawerCollections.filter(c => drawerCollectionMembership[c.id] && drawerCollectionMembership[c.id].included).length;
+      label.textContent = includedCount ? `已加入 ${includedCount} 個場景` : '點選下方清單可加入';
+    }
+
+    function toggleDrawerCreateRow(force){
+      const wrap = document.getElementById('drawerCreateWrap');
+      if(!wrap) return;
+      drawerCreateOpen = typeof force === 'boolean' ? force : !drawerCreateOpen;
+      wrap.classList.toggle('open', drawerCreateOpen);
+    }
+
+    function toggleDrawerCollectionMenu(force){
+      const menu = document.getElementById('drawerCollectionMenu');
+      if(!menu) return;
+      const next = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+      menu.classList.toggle('open', next);
+      if(!next) toggleDrawerCreateRow(false);
+    }
+
+    function renderDrawerCollectionList(){
+      const listEl = document.getElementById('drawerCollectionList');
+      if(!listEl) return;
+      listEl.innerHTML = '';
+      drawerCollections.forEach(c => {
+        const membership = drawerCollectionMembership[c.id] || { included: false, itemId: null };
+        const row = document.createElement('div');
+        row.className = `drawer-collection-item${membership.included ? ' active' : ''}`;
+        row.dataset.id = `${c.id}`;
+        row.innerHTML = `
+          <div class="drawer-collection-left">
+            <span class="drawer-collection-check">${membership.included ? '✓' : ''}</span>
+            <span class="drawer-collection-name">${escapeHtml(c.title || `場景 ${c.id}`)}</span>
+          </div>
+        `;
+        row.onclick = () => toggleCollectionMembership(c.id);
+        listEl.appendChild(row);
+      });
+    }
+
+    async function refreshDrawerCollectionMembership(){
+      drawerCollectionMembership = {};
+      if(!currentProduct || !currentProduct.id || !drawerCollections.length || !userLoggedIn || !currentUser) return;
+      const results = await Promise.all(
+        drawerCollections.map(async (c) => {
+          try{
+            const res = await apiFetch(`${API_PREFIX}/collections/${c.id}/items`);
+            const data = await res.json();
+            const matched = (data.items || []).find(i => i.product_id === currentProduct.id);
+            return { collectionId: c.id, included: !!matched, itemId: matched ? matched.id : null };
+          } catch {
+            return { collectionId: c.id, included: false, itemId: null };
+          }
+        })
+      );
+      results.forEach(r => { drawerCollectionMembership[r.collectionId] = { included: r.included, itemId: r.itemId }; });
+    }
+
+    async function toggleCollectionMembership(collectionId){
+      if(drawerCollectionMutating) return;
+      if(!userLoggedIn || !currentUser) return showLogin();
+      if(!currentProduct || !currentProduct.id) return;
+      const state = drawerCollectionMembership[collectionId] || { included: false, itemId: null };
+      drawerCollectionMutating = true;
+      try{
+        if(state.included){
+          if(state.itemId){
+            await apiFetch(`${API_PREFIX}/collections/${collectionId}/items/${state.itemId}`, { method:'DELETE' });
+          }
+          drawerCollectionMembership[collectionId] = { included: false, itemId: null };
+        } else {
+          const res = await apiFetch(`${API_PREFIX}/collections/${collectionId}/items`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              product_id: currentProduct.id,
+              variant_id: selectedVariant ? selectedVariant.id : null,
+              position: 0,
+              note: ''
+            })
+          });
+          const data = await res.json();
+          drawerCollectionMembership[collectionId] = { included: true, itemId: data.item_id || null };
+        }
+        if(activeView === 'collections'){
+          delete collectionItemsCache[collectionId];
+          if(selectedCollectionDetailId === collectionId) await loadCollectionItems(collectionId);
+          await loadCollections();
+        }
+      } finally {
+        drawerCollectionMutating = false;
+        renderDrawerCollectionList();
+        updateDrawerCollectionLabel();
+      }
     }
 
     function appendFeed(items){
-      const container = document.getElementById('productFeed');
-      items
-        .filter(i => i.type === 'product')
-        .forEach(p => {
-          const card = document.createElement('a');
-          card.className = 'product-card';
-          card.onclick = () => openProduct(p.id);
-
-          const img = document.createElement('img');
-          img.className = 'product-img';
-          img.src = p.image || '';
-          img.alt = p.name || '';
-
-          const name = document.createElement('div');
-          name.className = 'product-name';
-          name.textContent = p.name || '';
-
-          const price = document.createElement('div');
-          price.className = 'product-price';
-          price.textContent = `$${(p.price === null || p.price === undefined) ? '' : p.price}`;
-
-          card.appendChild(img);
-          card.appendChild(name);
-          card.appendChild(price);
-          container.appendChild(card);
-        });
+      const container=document.getElementById('productFeed');
+      items.filter(i=>i.type==='product').forEach(p=>{
+        const card=document.createElement('a'); card.className='product-card'; card.onclick=()=>openProduct(p.id);
+        const saveBtn=document.createElement('button');
+        saveBtn.type='button';
+        saveBtn.className='pin-save';
+        saveBtn.title='Save';
+        saveBtn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 4h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2z\"/></svg>';
+        saveBtn.onclick=async (e)=>{ e.preventDefault(); e.stopPropagation(); await openProduct(p.id, { openCollectionMenu: true }); };
+        const img=document.createElement('img'); img.className='product-img'; img.src=p.image||''; img.alt=p.name||'';
+        const meta=document.createElement('div'); meta.className='pin-meta';
+        const name=document.createElement('div'); name.className='product-name'; name.textContent=p.name||'';
+        const price=document.createElement('div'); price.className='product-price'; price.textContent=formatPrice(p.price);
+        meta.append(name,price);
+        card.append(img,saveBtn,meta); container.appendChild(card);
+      });
     }
 
     async function loadFeed(){
-      if (loading) return;
-      loading = true;
-      showLoader();
-      try {
-        const res = await fetch(`${API_PREFIX}/feed?cursor=${cursor}&limit=${limit}`);
+      if(loading) return;
+      loading=true; showLoader();
+      try{
+        const qs = new URLSearchParams({ cursor: String(cursor), limit: String(FEED_LIMIT) });
+        if(selectedFeedCategory) qs.set('category', selectedFeedCategory);
+        const res = await fetch(`${API_PREFIX}/feed?${qs.toString()}`);
         const data = await res.json();
-        appendFeed(data.items || []);
-        cursor = (data.next_cursor === null || data.next_cursor === undefined) ? cursor : data.next_cursor;
-        loadedItems += (data.items || []).length;
-        if (!userLoggedIn && loadedItems >= 40) showLogin();
-      } catch (err) {
-        console.error('loadFeed error', err);
-      } finally {
-        hideLoader();
-        loading = false;
+        appendFeed(data.items||[]);
+        if(data.next_cursor!==null && data.next_cursor!==undefined) cursor=data.next_cursor;
+        loadedItems += (data.items||[]).length;
+        if(!userLoggedIn && !loginPromptShown && loadedItems>=20){ showLogin(); loginPromptShown=true; }
+      }catch(err){ console.error('loadFeed error', err); }
+      finally{ hideLoader(); loading=false; }
+    }
+
+    async function loadCategories(){
+      const selectEl = document.getElementById('feedCategorySelect');
+      if(!selectEl) return;
+      const res = await fetch(`${API_PREFIX}/categories`);
+      const list = await res.json();
+      const prev = selectedFeedCategory;
+      selectEl.innerHTML = '<option value=\"\">全部分類</option>';
+      (list || []).forEach(c => {
+        const op = document.createElement('option');
+        op.value = c.slug;
+        op.textContent = c.name_zh || c.slug;
+        selectEl.appendChild(op);
+      });
+      if(prev) selectEl.value = prev;
+    }
+
+    function onFeedCategoryChange(){
+      const selectEl = document.getElementById('feedCategorySelect');
+      selectedFeedCategory = selectEl ? selectEl.value : '';
+      cursor = 0;
+      loadedItems = 0;
+      document.getElementById('productFeed').innerHTML = '';
+      loadFeed();
+    }
+
+    async function loadCollections(){
+      const listEl = document.getElementById('collectionsList');
+      if(!userLoggedIn || !currentUser){
+        collectionsData = [];
+        selectedCollectionDetailId = null;
+        selectedCollectionItemId = null;
+        collectionListLevel = 'collections';
+        collectionItemsCache = {};
+        listEl.innerHTML = '<div class="maps-empty">請先登入後使用場景清單。<div style="margin-top:8px;"><button class="btn-small" onclick="showLogin()">立即登入</button></div></div>';
+        renderCollectionPreview(null, []);
+        return;
+      }
+      const res = await apiFetch(`${API_PREFIX}/users/${currentUser.user_id}/collections`);
+      const data = await res.json();
+      collectionsData = data.items || [];
+      if(!collectionsData.some(c => c.id === selectedCollectionDetailId)) {
+        selectedCollectionDetailId = collectionsData.length ? collectionsData[0].id : null;
+      }
+      renderCollectionsList();
+      if(selectedCollectionDetailId) {
+        await loadCollectionItems(selectedCollectionDetailId);
       }
     }
 
-    async function openProduct(id){
-      try {
-        const res = await fetch(`${API_PREFIX}/products/${id}`);
-        const product = await res.json();
-        const drawer = document.getElementById('productDrawer');
+    async function createCollection(){
+      if(!userLoggedIn || !currentUser) return showLogin();
+      const input = document.getElementById('collectionCreateInput');
+      const title = (input.value || '').trim();
+      if(!title){ await uiAlert('請輸入場景名稱'); return; }
+      await apiFetch(`${API_PREFIX}/collections`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          owner_id: currentUser.user_id,
+          title,
+          description: '',
+          cover_image_url: currentProduct ? currentProduct.cover_image_url : null
+        })
+      });
+      input.value = '';
+      closeCollectionCreateModal();
+      collectionItemsCache = {};
+      await loadCollections();
+    }
 
-        document.getElementById('drawerTitle').innerText = product.name || '';
-        document.getElementById('drawerImage').src = product.cover_image_url || '';
-        document.getElementById('drawerSku').innerText = product.product_code || product.id;
+    async function loadDrawerCollections(){
+      const listEl = document.getElementById('drawerCollectionList');
+      if(!listEl) return;
+      if(!userLoggedIn || !currentUser){
+        drawerCollections = [];
+        selectedCollectionId = null;
+        drawerCollectionMembership = {};
+        listEl.innerHTML = '<div class="maps-empty">請先登入</div>';
+        updateDrawerCollectionLabel();
+        return;
+      }
+      const res = await apiFetch(`${API_PREFIX}/users/${currentUser.user_id}/collections`);
+      const data = await res.json();
+      drawerCollections = data.items || [];
+      if(!drawerCollections.length){
+        selectedCollectionId = null;
+        drawerCollectionMembership = {};
+        listEl.innerHTML = '<div class="maps-empty">尚無場景，按下方新增</div>';
+        updateDrawerCollectionLabel();
+        return;
+      }
+      if(!(selectedCollectionId && drawerCollections.some(c => c.id === selectedCollectionId))) selectedCollectionId = drawerCollections[0].id;
+      await refreshDrawerCollectionMembership();
+      renderDrawerCollectionList();
+      updateDrawerCollectionLabel();
+    }
 
-        const stockAvailable = product.variants && product.variants.some(v => (v.stock || 0) > 0);
-        document.getElementById('drawerStock').innerText = stockAvailable ? '有庫存' : '缺貨';
+    async function createCollectionFromDrawer(){
+      if(!userLoggedIn || !currentUser) return showLogin();
+      const input = document.getElementById('drawerNewCollectionTitle');
+      const title = (input.value || '').trim();
+      if(!title){ await uiAlert('請輸入場景名稱'); return; }
+      const created = await apiFetch(`${API_PREFIX}/collections`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          owner_id: currentUser.user_id,
+          title,
+          description: '',
+          cover_image_url: currentProduct ? currentProduct.cover_image_url : null
+        })
+      });
+      const createdData = await created.json();
+      selectedCollectionId = createdData.id;
+      input.value = '';
+      toggleDrawerCreateRow(false);
+      await loadDrawerCollections();
+      await loadCollections();
+    }
 
-        const stockBtn = document.getElementById('stockBtn');
-        const wishBtn = document.getElementById('wishBtn');
+    function buildSceneImages(product){
+      const urls=[];
+      if(product.cover_image_url) urls.push(product.cover_image_url);
+      if(Array.isArray(product.images)) product.images.forEach(img=>{ if(img&&img.image_url) urls.push(img.image_url); });
+      if(urls.length<4){
+        const seed = encodeURIComponent(product.product_code || product.id || 'furni');
+        urls.push(`https://picsum.photos/seed/${seed}-scene-1/600/600`,`https://picsum.photos/seed/${seed}-scene-2/600/600`,`https://picsum.photos/seed/${seed}-scene-3/600/600`);
+      }
+      const uniq=[]; urls.forEach(u=>{ if(u && !uniq.includes(u)) uniq.push(u); });
+      return uniq.slice(0,6);
+    }
 
-        if (stockAvailable) {
-          stockBtn.style.display = 'block';
-          wishBtn.style.display = 'none';
-        } else {
-          stockBtn.style.display = 'none';
-          wishBtn.style.display = 'block';
+    function updateDrawerByVariant(product, variant){
+      const imgEl=document.getElementById('drawerImage');
+      const fallback=product.cover_image_url || '';
+      const candidate = variant && variant.variant_code ? `/static/product_images/${encodeURIComponent(variant.variant_code)}.jpg` : fallback;
+      imgEl.onerror=()=>{ imgEl.onerror=null; imgEl.src=fallback; };
+      imgEl.src=candidate || fallback;
+      document.getElementById('drawerSkuStock').textContent = `${(variant&&variant.stock)||0}`;
+      document.getElementById('drawerStockStatus').textContent = ((variant&&variant.stock)||0)>0 ? '有庫存':'缺貨';
+    }
+
+    function renderSkuList(product){
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const list=document.getElementById('drawerSkuList'); list.innerHTML='';
+      if(!variants.length){ selectedVariant=null; document.getElementById('drawerSkuStock').textContent='-'; return; }
+      if(!selectedVariant || !variants.find(v=>v.id===selectedVariant.id)) selectedVariant = variants.find(v=>(v.stock||0)>0) || variants[0];
+      variants.forEach(v=>{
+        const item=document.createElement('div'); item.className=`sku-item${selectedVariant&&selectedVariant.id===v.id?' active':''}`;
+        item.onclick=()=>{ selectedVariant=v; updateDrawerByVariant(product, selectedVariant); renderSkuList(product); };
+        const left=document.createElement('div'); const code=document.createElement('div'); code.className='sku-code'; code.textContent=v.variant_code||`SKU-${v.id}`;
+        const meta=document.createElement('div'); meta.className='sku-meta'; meta.textContent=`庫存 ${v.stock||0}`; left.append(code,meta);
+        const right=document.createElement('div'); right.className='sku-price'; right.textContent=formatPrice(v.price);
+        item.append(left,right); list.appendChild(item);
+      });
+      document.getElementById('drawerSkuStock').textContent = `${selectedVariant.stock||0}`;
+    }
+
+    function openSceneModal(url){ const modal=document.getElementById('sceneModal'); const img=document.getElementById('sceneModalImage'); img.src=url||''; modal.classList.add('open'); }
+    function closeSceneModal(){ const modal=document.getElementById('sceneModal'); const img=document.getElementById('sceneModalImage'); modal.classList.remove('open'); img.src=''; }
+
+    function renderScenes(product){
+      const grid=document.getElementById('drawerSceneGrid'); grid.innerHTML='';
+      buildSceneImages(product).forEach(url=>{ const img=document.createElement('img'); img.className='scene-thumb'; img.src=url; img.alt='scene'; img.onclick=(e)=>{ e.stopPropagation(); openSceneModal(url); }; grid.appendChild(img); });
+    }
+
+    function fillDrawerBase(product){
+      document.getElementById('drawerTitle').textContent=product.name||'';
+      document.getElementById('drawerImage').src=product.cover_image_url||'';
+      document.getElementById('drawerBrand').textContent=product.brand||'品牌未設定';
+      document.getElementById('drawerCategory').textContent=product.category||'分類未設定';
+      document.getElementById('drawerDesc').textContent=product.description||'暫無描述';
+      const variants=Array.isArray(product.variants)?product.variants:[];
+      const prices=variants.map(v=>Number(v.price||0));
+      document.getElementById('drawerPriceRange').textContent = prices.length ? ((Math.min(...prices)===Math.max(...prices))?formatPrice(Math.min(...prices)):`${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`) : '-';
+      const stockAvailable = variants.some(v=>(v.stock||0)>0);
+      document.getElementById('drawerStockStatus').textContent = stockAvailable ? '有庫存':'缺貨';
+    }
+
+    async function openProduct(id, options = {}){
+      try{
+        const res=await fetch(`${API_PREFIX}/products/${id}`);
+        const product=await res.json();
+        currentProduct=product; selectedVariant=null;
+        fillDrawerBase(product); renderSkuList(product); if(selectedVariant) updateDrawerByVariant(product, selectedVariant); renderScenes(product);
+        await loadDrawerCollections();
+        document.getElementById('productDrawer').classList.add('open'); document.getElementById('drawerBackdrop').classList.add('open');
+        if(options.openCollectionMenu){
+          const picker = document.getElementById('drawerCollectionPicker');
+          toggleDrawerCollectionMenu(true);
+          if(picker) picker.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-
-        stockBtn.onclick = async () => {
-          if (!userLoggedIn) return showLogin();
-          const variantId =
-            product &&
-            product.variants &&
-            product.variants[0] &&
-            product.variants[0].id
-              ? product.variants[0].id
-              : null;
-          if (!variantId) return;
-          await fetch(`${API_PREFIX}/viewlist/items`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: USER_ID, variant_id: variantId, quantity: 1 })
-          });
-          alert('已加入到店查看清單');
-        };
-
-        wishBtn.onclick = async () => {
-          if (!userLoggedIn) return showLogin();
-          await fetch(`${API_PREFIX}/wishlist/items`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: USER_ID, product_id: product.id })
-          });
-          alert('已加入收藏清單');
-        };
-
-        drawer.classList.add('open');
-      } catch (err) {
-        console.error('openProduct error', err);
-      }
+      }catch(err){ console.error('openProduct error', err); }
     }
 
-    function closeDrawer(){ document.getElementById('productDrawer').classList.remove('open'); }
-    function showLogin(){ document.getElementById('loginModal').style.display = 'flex'; }
-    function closeLogin(){ document.getElementById('loginModal').style.display = 'none'; }
-    function lineLogin(){ userLoggedIn = true; closeLogin(); alert('Demo: 已視為登入'); }
+    function closeDrawer(){ document.getElementById('productDrawer').classList.remove('open'); document.getElementById('drawerBackdrop').classList.remove('open'); }
+    function showLogin(){ document.getElementById('loginModal').style.display='flex'; }
+    function closeLogin(){ document.getElementById('loginModal').style.display='none'; }
 
-    const scrollContainer = document.querySelector('.main');
-    scrollContainer.addEventListener('scroll', () => {
-      if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 300) loadFeed();
+    function startOAuth(provider){ window.location.href = `${API_PREFIX}/auth/${provider}/start`; }
+
+    async function loginWithProfile(){
+      const displayName=(document.getElementById('loginDisplayName').value||'').trim();
+      const email=(document.getElementById('loginEmail').value||'').trim();
+      if(!displayName){ await uiAlert('請先輸入名稱'); return; }
+      const res = await fetch(`${API_PREFIX}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: displayName, email: email || null }) });
+      if(!res.ok){ await uiAlert('登入失敗，請稍後再試'); return; }
+      const data=await res.json();
+      authToken=data.token; localStorage.setItem(AUTH_TOKEN_KEY, authToken); currentUser=data; userLoggedIn=true; loginPromptShown=false; refreshUserBar(); closeLogin();
+      if(activeView==='collections') loadCollections();
+      loadDrawerCollections();
+      await uiAlert(`已登入：${data.display_name}`, '登入成功');
+    }
+
+    async function logout(){
+      try{ await apiFetch(`${API_PREFIX}/auth/logout`, { method:'POST' }); }catch{}
+      authToken=''; localStorage.removeItem(AUTH_TOKEN_KEY); currentUser=null; userLoggedIn=false; loginPromptShown=false; refreshUserBar();
+      collectionsData = [];
+      selectedCollectionDetailId = null;
+      selectedCollectionItemId = null;
+      collectionListLevel = 'collections';
+      collectionItemsCache = {};
+      if(activeView!=='feed') switchView('feed');
+    }
+
+    function handleAuthAction(){ if(userLoggedIn) logout(); else showLogin(); }
+
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeSceneModal(); closeDrawer(); closeLogin(); closeCollectionCreateModal(); closeSceneMetaModal(); closeAppDialog(false); } });
+    document.addEventListener('click', (e)=>{
+      const picker = document.getElementById('drawerCollectionPicker');
+      if(picker && !picker.contains(e.target)) toggleDrawerCollectionMenu(false);
     });
 
-    loadFeed();
+    const scrollContainer=document.getElementById('mainScroll');
+    scrollContainer.addEventListener('scroll', ()=>{
+      if(activeView !== 'feed') return;
+      if(scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 320) loadFeed();
+    });
+
+    (async ()=>{
+      consumeTokenFromUrl();
+      await loadCategories();
+      await initAuth();
+      await loadFeed();
+    })();
   </script>
 </body>
 </html>

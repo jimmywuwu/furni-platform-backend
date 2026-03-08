@@ -1,15 +1,24 @@
 ﻿from contextlib import asynccontextmanager
+import json
+import os
+import secrets
+from urllib.parse import urlencode
+from urllib.request import Request as UrlRequest, urlopen
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from .database import Base, engine, get_db
 from .models import (
+    AuthSession,
+    Category,
     Collection,
+    CollectionComment,
+    CollectionImage,
     CollectionItem,
     FeedSlot,
     Product,
@@ -21,16 +30,23 @@ from .models import (
     WishlistItem,
 )
 from .schemas import (
+    AddCollectionCommentIn,
+    AddCollectionImageIn,
     AddCollectionItemIn,
     AddViewlistItemIn,
     AddWishlistItemIn,
+    AuthOut,
+    CategoryOut,
     CreateCollectionIn,
     FeedItemOut,
     FeedOut,
-    ProductDetailOut,
-    VariantOut,
     ImageOut,
+    LoginIn,
+    ProductDetailOut,
+    UpdateCollectionIn,
+    VariantOut,
 )
+from .migrations import run_schema_migrations
 from .seed import seed_data
 
 
@@ -38,6 +54,7 @@ from .seed import seed_data
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     with Session(engine) as db:
+        run_schema_migrations(db)
         seed_data(db)
     yield
 
@@ -72,6 +89,87 @@ def _get_or_create_viewlist(db: Session, user_id: int) -> Viewlist:
     return viewlist
 
 
+def _extract_bearer_token(authorization: str | None) -> str | None:
+    if not authorization:
+        return None
+    value = authorization.strip()
+    if not value.lower().startswith("bearer "):
+        return None
+    return value[7:].strip()
+
+
+def _session_to_auth_out(db: Session, session: AuthSession) -> AuthOut:
+    user = db.scalar(select(User).where(User.id == session.user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return AuthOut(
+        token=session.token,
+        user_id=user.id,
+        display_name=user.display_name,
+        email=user.email,
+    )
+
+
+def _create_auth_session(db: Session, user: User, provider: str) -> AuthOut:
+    token = secrets.token_urlsafe(32)
+    session = AuthSession(user_id=user.id, token=token, provider=provider)
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return _session_to_auth_out(db, session)
+
+
+def _oauth_post_form(url: str, data: dict) -> dict:
+    payload = urlencode(data).encode("utf-8")
+    req = UrlRequest(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+    with urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _oauth_get_json(url: str, headers: dict | None = None) -> dict:
+    req = UrlRequest(url, headers=headers or {}, method="GET")
+    with urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _get_or_create_user(db: Session, display_name: str, email: str | None) -> User:
+    user = db.scalar(
+        select(User).where(
+            User.display_name == display_name,
+            User.email == email,
+        )
+    )
+    if not user:
+        user = User(display_name=display_name, email=email)
+        db.add(user)
+        db.flush()
+        _get_or_create_wishlist(db, user.id)
+        _get_or_create_viewlist(db, user.id)
+    return user
+
+
+def _normalize_visibility(value: str | None) -> str:
+    v = (value or "private").strip().lower()
+    if v not in {"private", "public"}:
+        return "private"
+    return v
+
+
+def _line_redirect_uri(request: Request) -> str:
+    env = os.getenv("LINE_REDIRECT_URI")
+    return env or str(request.url_for("line_callback_oauth"))
+
+
+def _google_redirect_uri(request: Request) -> str:
+    env = os.getenv("GOOGLE_REDIRECT_URI")
+    return env or str(request.url_for("google_callback_oauth"))
+
+
 @app.get("/")
 def index():
     return FileResponse("index.html")
@@ -86,6 +184,7 @@ def health():
 def get_feed(
     cursor: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    category: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     total_slots = db.scalar(select(func.count(FeedSlot.id))) or 0
@@ -93,21 +192,38 @@ def get_feed(
         return FeedOut(items=[], next_cursor=None)
 
     cursor_norm = cursor % total_slots
-    slots = db.scalars(
-        select(FeedSlot)
-        .order_by(FeedSlot.position.asc())
-        .offset(cursor_norm)
-        .limit(limit)
-    ).all()
+    ordered_slots = db.scalars(select(FeedSlot).order_by(FeedSlot.position.asc())).all()
+    if not ordered_slots:
+        return FeedOut(items=[], next_cursor=None)
 
-    if len(slots) < limit:
-        extra = db.scalars(
-            select(FeedSlot)
-            .order_by(FeedSlot.position.asc())
-            .offset(0)
-            .limit(limit - len(slots))
-        ).all()
-        slots.extend(extra)
+    if category:
+        slots: list[FeedSlot] = []
+        scanned = 0
+        idx = cursor_norm
+        while scanned < total_slots and len(slots) < limit:
+            slot = ordered_slots[idx]
+            scanned += 1
+            idx = (idx + 1) % total_slots
+            if slot.slot_type != "product":
+                continue
+            product = db.scalar(select(Product).where(Product.id == slot.ref_id))
+            if not product:
+                continue
+            category_slug = (
+                product.primary_category.slug
+                if product.primary_category is not None
+                else (product.category or "")
+            )
+            if category_slug == category:
+                slots.append(slot)
+        next_cursor = (cursor_norm + scanned) % total_slots
+    else:
+        slots = []
+        idx = cursor_norm
+        for _ in range(min(limit, total_slots)):
+            slots.append(ordered_slots[idx])
+            idx = (idx + 1) % total_slots
+        next_cursor = (cursor_norm + len(slots)) % total_slots
 
     items: list[FeedItemOut] = []
     for slot in slots:
@@ -132,9 +248,15 @@ def get_feed(
             )
         )
 
-    next_cursor = (cursor_norm + len(slots)) % total_slots
-
     return FeedOut(items=items, next_cursor=next_cursor)
+
+
+@app.get("/api/v1/categories", response_model=list[CategoryOut])
+def get_categories(db: Session = Depends(get_db)):
+    rows = db.scalars(
+        select(Category).where(Category.is_active == True).order_by(Category.level.asc(), Category.sort_order.asc(), Category.id.asc())
+    ).all()
+    return [CategoryOut.model_validate(c) for c in rows]
 
 
 @app.get("/api/v1/products/{product_id}", response_model=ProductDetailOut)
@@ -142,7 +264,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.scalar(
         select(Product)
         .where(Product.id == product_id)
-        .options(joinedload(Product.variants), joinedload(Product.images))
+        .options(joinedload(Product.variants), joinedload(Product.images), joinedload(Product.primary_category))
     )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -156,6 +278,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         name=product.name,
         brand=product.brand,
         category=product.category,
+        category_slug=product.primary_category.slug if product.primary_category else None,
         description=product.description,
         cover_image_url=product.cover_image_url,
         variants=variants,
@@ -220,6 +343,22 @@ def add_viewlist_item(payload: AddViewlistItemIn, db: Session = Depends(get_db))
     return {"ok": True, "item_id": item.id}
 
 
+@app.delete("/api/v1/viewlist/items/{item_id}")
+def delete_viewlist_item(item_id: int, user_id: int, db: Session = Depends(get_db)):
+    viewlist = _get_or_create_viewlist(db, user_id)
+    item = db.scalar(
+        select(ViewlistItem).where(
+            ViewlistItem.id == item_id,
+            ViewlistItem.viewlist_id == viewlist.id,
+        )
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
 @app.post("/api/v1/collections")
 def create_collection(payload: CreateCollectionIn, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.id == payload.owner_id))
@@ -231,6 +370,8 @@ def create_collection(payload: CreateCollectionIn, db: Session = Depends(get_db)
         title=payload.title,
         description=payload.description,
         cover_image_url=payload.cover_image_url,
+        visibility=_normalize_visibility(payload.visibility),
+        is_store_scene=bool(payload.is_store_scene),
     )
     db.add(collection)
     db.commit()
@@ -239,8 +380,11 @@ def create_collection(payload: CreateCollectionIn, db: Session = Depends(get_db)
 
 
 @app.get("/api/v1/collections")
-def list_collections(db: Session = Depends(get_db)):
-    rows = db.scalars(select(Collection).order_by(Collection.id.desc())).all()
+def list_collections(owner_id: int | None = None, db: Session = Depends(get_db)):
+    stmt = select(Collection).order_by(Collection.id.desc())
+    if owner_id is not None:
+        stmt = stmt.where(Collection.owner_id == owner_id)
+    rows = db.scalars(stmt).all()
     return {
         "items": [
             {
@@ -249,6 +393,106 @@ def list_collections(db: Session = Depends(get_db)):
                 "title": c.title,
                 "description": c.description,
                 "cover_image_url": c.cover_image_url,
+                "visibility": c.visibility,
+                "is_store_scene": bool(c.is_store_scene),
+            }
+            for c in rows
+        ]
+    }
+
+
+@app.patch("/api/v1/collections/{collection_id}")
+def update_collection(collection_id: int, payload: UpdateCollectionIn, db: Session = Depends(get_db)):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+
+    if payload.title is not None:
+        collection.title = payload.title
+    if payload.description is not None:
+        collection.description = payload.description
+    if payload.cover_image_url is not None:
+        collection.cover_image_url = payload.cover_image_url
+    if payload.visibility is not None:
+        collection.visibility = _normalize_visibility(payload.visibility)
+    if payload.is_store_scene is not None:
+        collection.is_store_scene = bool(payload.is_store_scene)
+
+    db.commit()
+    db.refresh(collection)
+    return {"ok": True}
+
+
+@app.delete("/api/v1/collections/{collection_id}")
+def delete_collection(collection_id: int, user_id: int, db: Session = Depends(get_db)):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    if collection.owner_id != user_id:
+        raise HTTPException(status_code=403, detail="No permission to delete this collection")
+
+    db.query(CollectionItem).filter(CollectionItem.collection_id == collection_id).delete()
+    db.query(CollectionImage).filter(CollectionImage.collection_id == collection_id).delete()
+    db.query(CollectionComment).filter(CollectionComment.collection_id == collection_id).delete()
+    db.delete(collection)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/v1/collections/public/search")
+def search_public_collections(
+    q: str = Query(default="", min_length=0),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    keyword = q.strip().lower()
+    stmt = select(Collection).where(Collection.visibility == "public")
+    if keyword:
+        like = f"%{keyword}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(Collection.title).like(like),
+                func.lower(func.coalesce(Collection.description, "")).like(like),
+            )
+        )
+    rows = db.scalars(stmt.order_by(Collection.id.desc()).limit(limit)).all()
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "owner_id": c.owner_id,
+                "title": c.title,
+                "description": c.description,
+                "cover_image_url": c.cover_image_url,
+                "visibility": c.visibility,
+                "is_store_scene": bool(c.is_store_scene),
+            }
+            for c in rows
+        ]
+    }
+
+
+@app.get("/api/v1/collections/store/latest")
+def get_latest_store_collections(
+    limit: int = Query(default=12, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    rows = db.scalars(
+        select(Collection)
+        .where(Collection.visibility == "public", Collection.is_store_scene == True)
+        .order_by(Collection.id.desc())
+        .limit(limit)
+    ).all()
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "owner_id": c.owner_id,
+                "title": c.title,
+                "description": c.description,
+                "cover_image_url": c.cover_image_url,
+                "visibility": c.visibility,
+                "is_store_scene": bool(c.is_store_scene),
             }
             for c in rows
         ]
@@ -300,6 +544,8 @@ def list_collection_items(collection_id: int, db: Session = Depends(get_db)):
             "id": collection.id,
             "title": collection.title,
             "description": collection.description,
+            "visibility": collection.visibility,
+            "is_store_scene": bool(collection.is_store_scene),
         },
         "items": [
             {
@@ -330,6 +576,111 @@ def delete_collection_item(collection_id: int, item_id: int, db: Session = Depen
     return {"ok": True}
 
 
+@app.get("/api/v1/collections/{collection_id}/images")
+def list_collection_images(collection_id: int, db: Session = Depends(get_db)):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    rows = db.scalars(
+        select(CollectionImage).where(CollectionImage.collection_id == collection_id).order_by(CollectionImage.id.desc())
+    ).all()
+    return {
+        "items": [
+            {
+                "id": r.id,
+                "image_url": r.image_url,
+                "caption": r.caption,
+            }
+            for r in rows
+        ]
+    }
+
+
+@app.post("/api/v1/collections/{collection_id}/images")
+def add_collection_image(
+    collection_id: int,
+    payload: AddCollectionImageIn,
+    db: Session = Depends(get_db),
+):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    row = CollectionImage(
+        collection_id=collection_id,
+        image_url=payload.image_url,
+        caption=payload.caption,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"ok": True, "id": row.id}
+
+
+@app.delete("/api/v1/collections/{collection_id}/images/{image_id}")
+def delete_collection_image(collection_id: int, image_id: int, db: Session = Depends(get_db)):
+    row = db.scalar(
+        select(CollectionImage).where(
+            CollectionImage.id == image_id,
+            CollectionImage.collection_id == collection_id,
+        )
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Image not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/v1/collections/{collection_id}/comments")
+def list_collection_comments(collection_id: int, db: Session = Depends(get_db)):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    rows = db.scalars(
+        select(CollectionComment).where(CollectionComment.collection_id == collection_id).order_by(CollectionComment.id.desc())
+    ).all()
+    result = []
+    for row in rows:
+        user = db.scalar(select(User).where(User.id == row.user_id))
+        result.append(
+            {
+                "id": row.id,
+                "user_id": row.user_id,
+                "user_name": user.display_name if user else f"User {row.user_id}",
+                "content": row.content,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+        )
+    return {"items": result}
+
+
+@app.post("/api/v1/collections/{collection_id}/comments")
+def add_collection_comment(
+    collection_id: int,
+    payload: AddCollectionCommentIn,
+    db: Session = Depends(get_db),
+):
+    collection = db.scalar(select(Collection).where(Collection.id == collection_id))
+    user = db.scalar(select(User).where(User.id == payload.user_id))
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    content = (payload.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Content is empty")
+
+    row = CollectionComment(
+        collection_id=collection_id,
+        user_id=payload.user_id,
+        content=content,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"ok": True, "id": row.id}
+
+
 @app.get("/api/v1/users/{user_id}/wishlist")
 def get_user_wishlist(user_id: int, db: Session = Depends(get_db)):
     wishlist = _get_or_create_wishlist(db, user_id)
@@ -349,6 +700,43 @@ def get_user_wishlist(user_id: int, db: Session = Depends(get_db)):
             )
 
     return {"wishlist_id": wishlist.id, "items": result}
+
+
+@app.delete("/api/v1/wishlist/items/{item_id}")
+def delete_wishlist_item(item_id: int, user_id: int, db: Session = Depends(get_db)):
+    wishlist = _get_or_create_wishlist(db, user_id)
+    item = db.scalar(
+        select(WishlistItem).where(
+            WishlistItem.id == item_id,
+            WishlistItem.wishlist_id == wishlist.id,
+        )
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/v1/users/{user_id}/collections")
+def get_user_collections(user_id: int, db: Session = Depends(get_db)):
+    rows = db.scalars(
+        select(Collection).where(Collection.owner_id == user_id).order_by(Collection.id.desc())
+    ).all()
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "owner_id": c.owner_id,
+                "title": c.title,
+                "description": c.description,
+                "cover_image_url": c.cover_image_url,
+                "visibility": c.visibility,
+                "is_store_scene": bool(c.is_store_scene),
+            }
+            for c in rows
+        ]
+    }
 
 
 @app.get("/api/v1/wishlists/default")
@@ -431,10 +819,185 @@ def delete_default_viewlist_item(item_id: int, user_id: int, db: Session = Depen
     return {"ok": True}
 
 
-@app.post("/api/v1/auth/line/callback")
-def line_callback(payload: dict):
-    return {
-        "ok": True,
-        "message": "LINE callback stub",
-        "received": payload,
-    }
+@app.get("/api/v1/auth/line/start")
+def line_start(request: Request):
+    client_id = os.getenv("LINE_CLIENT_ID")
+    if not client_id:
+        raise HTTPException(status_code=500, detail="LINE_CLIENT_ID not configured")
+
+    redirect_uri = _line_redirect_uri(request)
+    state = secrets.token_urlsafe(24)
+    query = urlencode(
+        {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": "profile openid email",
+            "state": state,
+        }
+    )
+
+    resp = RedirectResponse(f"https://access.line.me/oauth2/v2.1/authorize?{query}")
+    resp.set_cookie("oauth_state_line", state, max_age=600, httponly=True, samesite="lax")
+    return resp
+
+
+@app.get("/api/v1/auth/google/start")
+def google_start(request: Request):
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    if not client_id:
+        raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID not configured")
+
+    redirect_uri = _google_redirect_uri(request)
+    state = secrets.token_urlsafe(24)
+    query = urlencode(
+        {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": "openid email profile",
+            "state": state,
+            "access_type": "offline",
+            "prompt": "consent",
+        }
+    )
+
+    resp = RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{query}")
+    resp.set_cookie("oauth_state_google", state, max_age=600, httponly=True, samesite="lax")
+    return resp
+
+
+@app.get("/api/v1/auth/line/callback")
+def line_callback_oauth(
+    request: Request,
+    code: str,
+    state: str,
+    db: Session = Depends(get_db),
+):
+    expected_state = request.cookies.get("oauth_state_line")
+    if not expected_state or expected_state != state:
+        raise HTTPException(status_code=400, detail="Invalid state")
+
+    client_id = os.getenv("LINE_CLIENT_ID")
+    client_secret = os.getenv("LINE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="LINE OAuth secret not configured")
+
+    token_data = _oauth_post_form(
+        "https://api.line.me/oauth2/v2.1/token",
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": _line_redirect_uri(request),
+            "client_id": client_id,
+            "client_secret": client_secret,
+        },
+    )
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="LINE token exchange failed")
+
+    profile = _oauth_get_json(
+        "https://api.line.me/v2/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    display_name = (profile.get("displayName") or "LINE User").strip()
+    user = _get_or_create_user(db, display_name=display_name, email=None)
+    auth = _create_auth_session(db, user, provider="line")
+
+    resp = RedirectResponse(url=f"/?token={auth.token}&provider=line")
+    resp.delete_cookie("oauth_state_line")
+    return resp
+
+
+@app.get("/api/v1/auth/google/callback")
+def google_callback_oauth(
+    request: Request,
+    code: str,
+    state: str,
+    db: Session = Depends(get_db),
+):
+    expected_state = request.cookies.get("oauth_state_google")
+    if not expected_state or expected_state != state:
+        raise HTTPException(status_code=400, detail="Invalid state")
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="GOOGLE OAuth secret not configured")
+
+    token_data = _oauth_post_form(
+        "https://oauth2.googleapis.com/token",
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": _google_redirect_uri(request),
+            "client_id": client_id,
+            "client_secret": client_secret,
+        },
+    )
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Google token exchange failed")
+
+    profile = _oauth_get_json(
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    display_name = (profile.get("name") or profile.get("email") or "Google User").strip()
+    email = profile.get("email")
+    user = _get_or_create_user(db, display_name=display_name, email=email)
+    auth = _create_auth_session(db, user, provider="google")
+
+    resp = RedirectResponse(url=f"/?token={auth.token}&provider=google")
+    resp.delete_cookie("oauth_state_google")
+    return resp
+
+
+@app.post("/api/v1/auth/login", response_model=AuthOut)
+def auth_login(payload: LoginIn, db: Session = Depends(get_db)):
+    display_name = payload.display_name.strip()
+    if not display_name:
+        raise HTTPException(status_code=400, detail="display_name is required")
+
+    user = _get_or_create_user(db, display_name=display_name, email=payload.email)
+    return _create_auth_session(db, user, provider="local")
+
+
+@app.get("/api/v1/auth/me", response_model=AuthOut)
+def auth_me(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    session = db.scalar(select(AuthSession).where(AuthSession.token == token))
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    return _session_to_auth_out(db, session)
+
+
+@app.post("/api/v1/auth/logout")
+def auth_logout(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    token = _extract_bearer_token(authorization)
+    if not token:
+        return {"ok": True}
+
+    session = db.scalar(select(AuthSession).where(AuthSession.token == token))
+    if session:
+        db.delete(session)
+        db.commit()
+    return {"ok": True}
+
+
+@app.post("/api/v1/auth/line/callback", response_model=AuthOut)
+def line_callback(payload: dict, db: Session = Depends(get_db)):
+    profile_name = (payload.get("display_name") or payload.get("name") or "LINE User").strip()
+    email = payload.get("email")
+    user = _get_or_create_user(db, display_name=profile_name, email=email)
+    return _create_auth_session(db, user, provider="line")
