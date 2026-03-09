@@ -5,29 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>David Field</title>
   <style>
-    :root { --bg:#f7f4ef; --panel:#fff; --line:#e7e1d8; --text:#1c1a17; --muted:#6e675f; --accent:#b08a57; }
+    :root { --bg:#ffffff; --panel:#fff; --line:#e7e1d8; --text:#1c1a17; --muted:#6e675f; --accent:#b08a57; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
     .container { display:flex; height:100vh; }
-    .sidebar { width:84px; background:#fbfaf8; padding:14px 10px; border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; }
-    .logo { width:42px; height:42px; border-radius:999px; border:1px solid #d9d0c3; color:#2a251f; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; letter-spacing:1px; margin:6px 0 16px; background:#fff; }
-    .logo span { display:none; }
+    .sidebar { width:250px; background:#f6f6f6; padding:42px 28px 24px; border-right:1px solid #e5e5e5; display:flex; flex-direction:column; align-items:stretch; }
+    .logo { margin:0 0 44px; font-family: "Times New Roman", Georgia, serif; font-size:28px; letter-spacing:1px; font-weight:400; color:#2a251f; line-height:1; text-align:left; white-space:nowrap; }
+    .logo .accent { color:#2a251f; }
     .menu { list-style:none; padding:0; margin:0; }
-    .menu li { width:42px; height:42px; margin:8px 0; border-radius:14px; color:#5a534b; cursor:pointer; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e9e3da; }
-    .menu li.active { background:#1e1b17; color:#fff; border-color:#1e1b17; }
-    .menu li svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-    .divider { border-top:1px solid #ececec; margin:16px 0; width:100%; }
-    .newsletter { display:none; }
+    .menu li { margin:0; padding:8px 0; color:#151515; cursor:pointer; font-size:15px; font-weight:400; letter-spacing:.1px; display:flex; align-items:center; justify-content:space-between; }
+    .menu li.active { color:#111; }
+    .menu-arrow { color:#555; font-size:16px; line-height:1; }
+    .divider { border-top:1px solid #dddddd; margin:24px 0; width:100%; }
+    .newsletter { display:block; margin-top:6px; }
+    .newsletter-title { font-size:15px; font-weight:400; color:#1a1a1a; margin:0 0 6px; }
+    .newsletter-sub { font-size:12px; color:#8d8d8d; margin:0 0 12px; line-height:1.4; }
+    .newsletter input { width:100%; border:1px solid #e2e2e2; background:#f2f2f2; border-radius:2px; padding:9px 10px; font-size:12px; color:#5f5f5f; }
+    .newsletter button { margin-top:10px; background:#000; color:#fff; border:none; padding:9px 14px; font-size:12px; font-weight:400; cursor:pointer; }
+    .sidebar-social { margin-top:auto; display:flex; gap:14px; color:#8c8c8c; font-size:14px; }
+    .sidebar-copyright { margin-top:8px; color:#222; font-size:12px; font-weight:400; }
 
     .main { flex:1; padding:12px 16px; overflow:auto; }
-    .user-bar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:4px 0 14px; }
-    .top-search { flex:1; background:#efebe5; border-radius:999px; height:44px; display:flex; align-items:center; padding:0 14px; min-width:220px; }
+    .user-bar { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin:4px 0 14px; }
+    .top-search { flex:1; background:#fff; border:1px solid #000; border-radius:999px; height:44px; display:flex; align-items:center; padding:0 14px; min-width:220px; }
     .top-search input { flex:1; border:none; background:transparent; font-size:15px; outline:none; }
     .top-search-icon { color:#777; font-size:18px; margin-right:10px; }
-    .user-pill { font-size:12px; color:#555; border:1px solid #ddd; border-radius:999px; padding:4px 10px; background:#fff; }
-    .user-btn { border:1px solid #ccc; background:#fff; padding:5px 10px; border-radius:999px; cursor:pointer; font-size:12px; }
+    .user-menu { position:relative; }
+    .user-icon-btn { width:40px; height:40px; border-radius:999px; border:1px solid #000; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .user-icon-btn svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .user-menu-pop { position:absolute; right:0; top:calc(100% + 8px); width:240px; background:#111; border:1px solid #2c2c2c; border-radius:12px; padding:10px; color:#fff; display:none; z-index:1200; box-shadow:0 14px 28px rgba(0,0,0,.28); }
+    .user-menu:hover .user-menu-pop { display:block; }
+    .user-menu.open .user-menu-pop { display:block; }
+    .user-pop-head { background:#1f1f1f; border:1px solid #2f2f2f; border-radius:10px; padding:12px; text-align:center; }
+    .user-pop-avatar { width:44px; height:44px; border-radius:999px; margin:0 auto 8px; background:#2e2e2e; display:flex; align-items:center; justify-content:center; font-weight:700; }
+    .user-pop-name { font-size:14px; }
+    .user-pop-sub { margin-top:4px; font-size:12px; color:#bdbdbd; }
+    .user-pop-actions { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+    .user-pop-btn { width:100%; text-align:left; border:1px solid #2d2d2d; background:#171717; color:#fff; border-radius:8px; padding:9px 10px; font-size:13px; cursor:pointer; }
+    .user-pop-btn:hover { background:#202020; }
 
-    .hero { position:relative; height:300px; overflow:hidden; border-radius:20px; margin:0 4px 14px; }
+    .hero { position:relative; height:420px; overflow:hidden; border-radius:20px; margin:0 4px 14px; }
     .slide { position:absolute; inset:0; opacity:0; transition:opacity .8s; }
     .slide.active { opacity:1; }
     .slide img { width:100%; height:100%; object-fit:cover; }
@@ -41,13 +58,30 @@
     .title h1 { margin:0; font-size:24px; }
     .title p { margin-top:6px; color:var(--muted); font-size:13px; }
     .feed-tools { display:flex; justify-content:flex-start; margin:0 0 14px; padding:0 4px; }
-    .feed-tools select { border:none; border-radius:999px; padding:10px 14px; background:#efebe5; color:#463f37; }
+    .feed-tools select { border:1px solid #000; border-radius:999px; padding:10px 14px; background:#fff; color:#000; }
+    .home-wrap { margin:0; background:#fff; }
+    .about-hero { height:350px; background:#ececec; border-top:1px solid #e6e6e6; border-bottom:1px solid #e6e6e6; padding:120px 60px 40px; }
+    .about-hero h1 { margin:0; font-size:38px; font-weight:700; color:#111; }
+    .about-breadcrumb { margin-top:16px; font-size:13px; color:#9a9389; }
+    .about-content { padding:42px 60px 24px; max-width:980px; }
+    .about-content h2 { margin:0 0 14px; font-size:36px; color:#8f1f1f; font-weight:700; }
+    .about-content p { margin:0 0 18px; font-size:17px; line-height:1.95; color:#2a2622; }
+    .contact-wrap { background:#fff; padding:20px 4px; margin:0; }
+    .contact-shell { display:grid; grid-template-columns:minmax(320px,420px) 1fr; gap:16px; align-items:stretch; max-width:1200px; }
+    .contact-info { background:#fff; border:1px solid #ece7de; border-radius:14px; padding:20px; }
+    .contact-name { margin:0 0 12px; font-size:28px; font-weight:400; color:#000; }
+    .contact-line { margin:0 0 8px; font-size:16px; color:#111; font-weight:400; line-height:1.5; }
+    .contact-actions { margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+    .contact-btn-primary { border:none; background:#000; color:#fff; border-radius:999px; padding:10px 16px; font-size:14px; cursor:pointer; }
+    .contact-btn-secondary { border:1px solid #000; background:#fff; color:#000; border-radius:999px; padding:10px 16px; font-size:14px; cursor:pointer; }
+    .contact-map { border-radius:14px; overflow:hidden; border:1px solid #ece7de; background:#fff; min-height:420px; }
+    .contact-map iframe { width:100%; height:420px; border:0; display:block; }
 
-    .feed { column-count:5; column-gap:16px; }
-    .product-card { position:relative; display:inline-block; width:100%; margin:0 0 16px; text-decoration:none; color:inherit; cursor:pointer; break-inside:avoid; }
-    .product-img { width:100%; height:auto; border-radius:16px; display:block; background:#ecece8; }
-    .pin-save { position:absolute; top:10px; right:10px; width:36px; height:36px; border:none; border-radius:999px; padding:0; background:#e60023; color:#fff; opacity:0; transition:opacity .2s; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .pin-save svg { width:16px; height:16px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .feed { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:16px; }
+    .product-card { position:relative; display:block; width:100%; margin:0; text-decoration:none; color:inherit; cursor:pointer; }
+    .product-img { width:100%; aspect-ratio:4/5; height:auto; border-radius:16px; display:block; background:#ffffff; object-fit:contain; }
+    .pin-save { position:absolute; top:10px; right:10px; width:36px; height:36px; border:1px solid #000; border-radius:999px; padding:0; background:#fff; color:#000; opacity:0; transition:opacity .2s; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .pin-save svg { width:16px; height:16px; stroke:#000; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .product-card:hover .pin-save { opacity:1; }
     .pin-meta { padding:8px 4px 0; }
     .product-name { margin-top:0; font-size:14px; font-weight:700; line-height:1.35; min-height:0; }
@@ -65,6 +99,9 @@
     .collections-header input { flex:1; border:1px solid #d9d9d3; border-radius:8px; padding:10px; }
     .collection-create-footer { border-top:1px solid #ececec; padding:10px; display:flex; justify-content:center; background:#fff; }
     .collection-plus-btn { width:34px; height:34px; border-radius:999px; border:1px solid #d8d1c6; background:#fff; color:#4b4339; font-size:22px; line-height:1; cursor:pointer; }
+    .empty-add-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:24px 12px; }
+    .empty-add-btn { width:42px; height:42px; border-radius:999px; border:1px solid #d8d1c6; background:#fff; color:#4b4339; font-size:28px; line-height:1; cursor:pointer; }
+    .empty-add-tip { font-size:12px; color:#7a7268; }
     .quick-modal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1150; }
     .quick-modal.open { display:flex; }
     .quick-modal-box { width:min(92vw,420px); background:#fff; border-radius:12px; padding:16px; border:1px solid #e8dfd2; }
@@ -86,12 +123,12 @@
     .maps-item:hover { background:#f9fbfc; }
     .maps-item.active { background:#eef7f8; }
     .maps-item-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .maps-item-delete { width:22px; height:22px; border:none; color:#fff; background:#c74141; border-radius:999px; font-size:16px; line-height:1; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .maps-item-delete:hover { background:#a83434; }
+    .maps-item-delete { border:none; background:transparent; color:#111; font-size:22px; line-height:1; font-weight:700; cursor:pointer; padding:0 2px; }
+    .maps-item-delete:hover { color:#000; }
     .maps-item-title { font-size:15px; font-weight:600; }
     .maps-item-sub { font-size:12px; color:#777; margin-top:4px; }
     .maps-preview { padding:16px; background:#fafaf8; }
-    .maps-preview img { width:100%; max-height:320px; object-fit:cover; border-radius:10px; background:#ecece8; }
+    .maps-preview img { width:100%; max-height:320px; object-fit:contain; border-radius:10px; background:#ffffff; }
     .maps-preview h3 { margin:12px 0 8px; }
     .maps-empty { padding:18px; color:#6b6b66; font-size:13px; }
     .maps-preview-actions { display:flex; gap:8px; margin-top:10px; }
@@ -111,10 +148,10 @@
     .scene-inline-edit:hover, .scene-inline-edit:focus { background:#f8f4ed; border-color:#d9cfbf; outline:none; }
     .scene-inline-edit.multiline { display:block; margin-top:4px; min-height:44px; white-space:pre-wrap; }
     .scene-product-list { display:flex; flex-direction:column; }
-    .scene-product-row { padding:10px 12px; border-bottom:1px solid #f1ece4; cursor:pointer; }
+    .scene-product-row { height:72px; padding:10px 12px; border-bottom:1px solid #f1ece4; cursor:pointer; display:flex; flex-direction:column; justify-content:center; }
     .scene-product-row.active { background:#eef7f8; }
-    .scene-product-title { font-size:14px; font-weight:600; }
-    .scene-product-sub { margin-top:3px; font-size:12px; color:#7a7268; }
+    .scene-product-title { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .scene-product-sub { margin-top:3px; font-size:12px; color:#7a7268; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     .loader { margin-top:24px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:22px; }
     .skeleton { height:180px; border-radius:8px; background:#ebebe7; animation:pulse 1.2s infinite; }
@@ -179,9 +216,9 @@
     .scene-modal-img { max-width:min(92vw,1200px); max-height:88vh; border-radius:10px; object-fit:contain; background:#111; }
     .scene-modal-close { position:absolute; top:18px; right:22px; border:none; background:transparent; color:#fff; font-size:34px; cursor:pointer; }
 
-    @media (max-width:1240px) { .feed { column-count:4; } }
-    @media (max-width:980px) { .sidebar { display:none; } .main { padding:12px; } .feed { column-count:3; } .user-bar { gap:8px; } .drawer { width:100vw; } .drawer-main-image { height:220px; } }
-    @media (max-width:680px) { .feed { column-count:2; } .top-search { height:40px; min-width:0; } .hero { height:220px; } }
+    @media (max-width:1240px) { .feed { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+    @media (max-width:980px) { .sidebar { display:none; } .main { padding:12px; } .feed { grid-template-columns:repeat(3, minmax(0, 1fr)); } .user-bar { gap:8px; } .drawer { width:100vw; } .drawer-main-image { height:220px; } }
+    @media (max-width:680px) { .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); } .top-search { height:40px; min-width:0; } .hero { height:280px; } .about-hero { height:auto; padding:48px 16px 26px; } .about-hero h1 { font-size:28px; } .about-content { padding:22px 16px 10px; } .about-content h2 { font-size:26px; } .about-content p { font-size:15px; line-height:1.8; } .contact-wrap { padding:10px 0; } .contact-shell { grid-template-columns:1fr; gap:12px; } .contact-name { font-size:22px; } .contact-line { font-size:15px; } .contact-map { min-height:320px; } .contact-map iframe { height:320px; } }
   </style>
 </head>
 <body>
@@ -223,42 +260,71 @@
     </div>
   </div>
 
-  <div class="container">
+    <div class="container">
     <div class="sidebar">
-      <div class="logo">DF</div>
+      <div class="logo">D<span class="accent">AVID</span> F<span class="accent">IELD</span></div>
       <ul class="menu">
-        <li id="menuFeed" class="active" onclick="switchView('feed')" title="首頁">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M6.5 9.5V21h11V9.5"/></svg>
-        </li>
-        <li onclick="switchView('feed')" title="推薦">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-        </li>
-        <li onclick="switchView('feed')" title="靈感">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.3L20 9l-4 4 .9 6-4.9-2.6L7.1 19 8 13 4 9l5.4-.7z"/></svg>
-        </li>
-        <li id="menuCollections" onclick="switchView('collections')" title="場景收藏">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2z"/></svg>
-        </li>
+        <li id="menuHome" class="active" onclick="switchView('home')" title="關於我們">關於我們</li>
+        <li id="menuFeed" onclick="switchView('feed')" title="精選商品">精選商品</li>
+        <li id="menuCollections" onclick="switchView('collections')" title="我的場景">我的場景</li>
+        <li id="menuContact" onclick="switchView('contact')" title="聯絡我們">聯絡我們</li>
       </ul>
       <div class="divider"></div>
-      <div class="newsletter">訂閱電子報<br /><input placeholder="請輸入電子郵件" /><button>訂閱</button></div>
+      <div class="newsletter">
+        <div class="newsletter-title">電子報</div>
+        <div class="newsletter-sub">訂閱大衛菲爾電子報</div>
+        <input placeholder="您的電子信箱" />
+        <button>訂閱</button>
+      </div>
+      <div class="sidebar-social">
+        <span>f</span><span>ig</span><span>p</span>
+      </div>
+      <div class="sidebar-copyright">&copy; By DavidField</div>
     </div>
 
     <div class="main" id="mainScroll">
       <div class="user-bar">
-        <div class="top-search"><span class="top-search-icon">⌕</span><input placeholder="Search" /></div>
-        <div id="userPill" class="user-pill">未登入</div>
-        <button id="authActionBtn" class="user-btn" onclick="handleAuthAction()">登入</button>
+        <div id="userMenu" class="user-menu">
+          <button class="user-icon-btn" onclick="toggleUserMenu(event)" title="帳號選單">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+          </button>
+          <div id="userMenuPop" class="user-menu-pop">
+            <div class="user-pop-head">
+              <div id="userPopAvatar" class="user-pop-avatar">?</div>
+              <div id="userPopName" class="user-pop-name">未登入</div>
+              <div id="userPopSub" class="user-pop-sub">請先登入</div>
+            </div>
+            <div class="user-pop-actions">
+              <button class="user-pop-btn" onclick="switchView('collections'); closeUserMenu();">我的場景</button>
+              <button id="userAuthMenuBtn" class="user-pop-btn" onclick="handleAuthAction(); closeUserMenu();">登入</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <section id="feedSection" class="view-section active">
+      <section id="homeSection" class="view-section active">
+        <div class="home-wrap">
+          <div class="about-hero">
+            <h1>關於我們</h1>
+            <div class="about-breadcrumb">Home / 關於我們</div>
+          </div>
+          <div class="about-content">
+            <h2>大衛菲爾理念 ABOUT US</h2>
+            <p>成立於1992年，由室內設計起家，現今為家居生活空間的複合式通路賣場。</p>
+            <p>家具可以只是家具、純粹性的裝飾、休憩的場所，也可以富含美學、意義，而賦予生活更高的價值感。</p>
+            <p>大衛菲爾就是這樣的一間店，試圖讓美學涵養、文化與歷史落實於生活當中，讓美的意義與生活產生連結。</p>
+            <p>人們常說，西方美學的起點可追溯回古典希臘羅馬時期，而東方的美學則有印度、中國與之相輝映，這樣不同風格、質地的產品看似衝突、冒險，卻在大衛菲爾碰撞出新的面貌。</p>
+            <p>我們希望打破單一風格性的裝飾與美學，多元是包容而充滿可能的。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="feedSection" class="view-section">
       <div class="hero">
-        <div class="slide active"><img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" alt="hero1" /></div>
-        <div class="slide"><img src="https://images.unsplash.com/photo-1493666438817-866a91353ca9" alt="hero2" /></div>
-        <div class="slide"><img src="https://images.unsplash.com/photo-1519710164239-da123dc03ef4" alt="hero3" /></div>
+        <div class="slide active"><img src="/static/hero-1.jpg" alt="hero1" /></div>
+        <div class="slide"><img src="/static/hero-2.jpg" alt="hero2" /></div>
         <button class="arrow left" onclick="prevSlide()">‹</button><button class="arrow right" onclick="nextSlide()">›</button>
         <div class="hero-overlay">實體門市本週新品到貨中</div>
       </div>
-      <div class="store-notice"><strong>門市公告</strong> 台北門市 3/15-3/22 舉辦春季佈置展，歡迎預約到店體驗。</div>
       <div class="title"><h1>精選家具</h1><p>探索新品、挑選 SKU、直接加入收藏與門市清單</p></div>
       <div class="feed-tools">
         <select id="feedCategorySelect" onchange="onFeedCategoryChange()">
@@ -281,6 +347,26 @@
           <div id="collectionPreview" class="maps-preview">
             <h3>尚未選擇場景</h3>
             <div style="font-size:13px;color:#777;">請從左側選擇一個場景清單。</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contactSection" class="view-section">
+        <div class="contact-wrap">
+          <div class="contact-shell">
+            <div class="contact-info">
+              <h2 class="contact-name">大衛菲爾家俱家飾</h2>
+              <p class="contact-line">台北市內湖區行忠路53號1樓</p>
+              <p class="contact-line">營業時間：10:00 - 21:00</p>
+              <p class="contact-line">預約專線：02-8792-8288</p>
+              <div class="contact-actions">
+                <button class="contact-btn-primary" onclick="window.open('https://maps.google.com/?q=台北市內湖區行忠路53號1樓','_blank')">Google Map 導航</button>
+                <button class="contact-btn-secondary">門市活動</button>
+              </div>
+            </div>
+            <div class="contact-map">
+              <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=%E5%8F%B0%E5%8C%97%E5%B8%82%E5%85%A7%E6%B9%96%E5%8D%80%E8%A1%8C%E5%BF%A0%E8%B7%AF53%E8%99%9F1%E6%A8%93&z=16&output=embed"></iframe>
+            </div>
           </div>
         </div>
       </section>
@@ -322,6 +408,7 @@
     <div class="quick-modal-box" onclick="event.stopPropagation()">
       <h4>編輯場景資訊</h4>
       <input id="sceneMetaBudgetInput" placeholder="場景預算，例如：NT$ 120,000" />
+      <input id="sceneMetaSizeInput" placeholder="場景大小，例如：12 坪 / 40 m²" />
       <textarea id="sceneMetaDescInput" placeholder="描述你的場景風格與需求..."></textarea>
       <div class="quick-modal-actions">
         <button class="btn-small" onclick="closeSceneMetaModal()">取消</button>
@@ -354,7 +441,7 @@
     const AUTH_TOKEN_KEY = 'furni_auth_token';
     let cursor = 0, loading = false, loadedItems = 0;
     let selectedFeedCategory = '';
-    let activeView = 'feed';
+    let activeView = 'home';
     let userLoggedIn = false, loginPromptShown = false;
     let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
     let currentUser = null, currentProduct = null, selectedVariant = null;
@@ -384,18 +471,54 @@
     }
 
     function refreshUserBar(){
-      const pill=document.getElementById('userPill'), btn=document.getElementById('authActionBtn');
-      if(userLoggedIn && currentUser){ pill.textContent=`Hi, ${currentUser.display_name}`; btn.textContent='登出'; }
-      else { pill.textContent='未登入'; btn.textContent='登入'; }
+      const avatar = document.getElementById('userPopAvatar');
+      const name = document.getElementById('userPopName');
+      const sub = document.getElementById('userPopSub');
+      const authBtn = document.getElementById('userAuthMenuBtn');
+      if(userLoggedIn && currentUser){
+        const display = currentUser.display_name || 'User';
+        if(avatar) avatar.textContent = (display[0] || 'U').toUpperCase();
+        if(name) name.textContent = display;
+        if(sub) sub.textContent = currentUser.email || '已登入';
+        if(authBtn) authBtn.textContent = '登出';
+      } else {
+        if(avatar) avatar.textContent = '?';
+        if(name) name.textContent = '未登入';
+        if(sub) sub.textContent = '請先登入';
+        if(authBtn) authBtn.textContent = '登入';
+      }
+    }
+
+    function toggleUserMenu(event){
+      if(event){
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const menu = document.getElementById('userMenu');
+      if(!menu) return;
+      menu.classList.toggle('open');
+    }
+
+    function closeUserMenu(){
+      const menu = document.getElementById('userMenu');
+      if(menu) menu.classList.remove('open');
     }
 
     function switchView(view){
       activeView = view;
+      document.getElementById('homeSection').classList.toggle('active', view==='home');
       document.getElementById('feedSection').classList.toggle('active', view==='feed');
       document.getElementById('collectionsSection').classList.toggle('active', view==='collections');
+      document.getElementById('contactSection').classList.toggle('active', view==='contact');
 
-      document.getElementById('menuFeed').classList.toggle('active', view==='feed');
-      document.getElementById('menuCollections').classList.toggle('active', view==='collections');
+      const setActive = (id, on) => {
+        const el = document.getElementById(id);
+        if(el) el.classList.toggle('active', !!on);
+      };
+      setActive('menuHome', view==='home');
+      setActive('menuFeed', view==='feed');
+      setActive('menuCollections', view==='collections');
+      setActive('menuContact', view==='contact');
 
       if(view==='collections') loadCollections();
     }
@@ -418,8 +541,10 @@
       const meta = parseSceneMeta(collection.description || '');
       sceneMetaEditingCollectionId = collectionId;
       const budgetEl = document.getElementById('sceneMetaBudgetInput');
+      const sizeEl = document.getElementById('sceneMetaSizeInput');
       const descEl = document.getElementById('sceneMetaDescInput');
       if(budgetEl) budgetEl.value = normalizeDigitsOnly(meta.budget || '');
+      if(sizeEl) sizeEl.value = meta.size || '';
       if(descEl) descEl.value = meta.description || '';
       const modal = document.getElementById('sceneMetaModal');
       if(modal) modal.classList.add('open');
@@ -503,18 +628,33 @@
       const raw = (rawDescription || '').trim();
       const lines = raw.split('\n');
       let budget = '';
-      if(lines.length && lines[0].startsWith('[BUDGET]')){
-        budget = lines[0].replace('[BUDGET]', '').trim();
-        lines.shift();
+      let size = '';
+      while(lines.length){
+        const first = lines[0].trim();
+        if(first.startsWith('[BUDGET]')){
+          budget = first.replace('[BUDGET]', '').trim();
+          lines.shift();
+          continue;
+        }
+        if(first.startsWith('[SIZE]')){
+          size = first.replace('[SIZE]', '').trim();
+          lines.shift();
+          continue;
+        }
+        break;
       }
-      return { budget, description: lines.join('\n').trim() };
+      return { budget, size, description: lines.join('\n').trim() };
     }
 
-    function composeSceneMeta(description, budget){
+    function composeSceneMeta(description, budget, size){
       const d = (description || '').trim();
       const b = (budget || '').trim();
-      if(!b) return d;
-      return `[BUDGET] ${b}${d ? `\n${d}` : ''}`;
+      const s = (size || '').trim();
+      const metaLines = [];
+      if(b) metaLines.push(`[BUDGET] ${b}`);
+      if(s) metaLines.push(`[SIZE] ${s}`);
+      if(d) metaLines.push(d);
+      return metaLines.join('\n');
     }
 
     async function fetchProductDetail(productId){
@@ -553,7 +693,7 @@
       if(!rows.length){
         preview.innerHTML = `
           <h3>${escapeHtml(collection.title || '')}</h3>
-          <div class="maps-empty">此場景尚無商品，請從商品卡片點 Save 加入。</div>
+          <div class="maps-empty">尚無商品</div>
         `;
         return;
       }
@@ -637,14 +777,16 @@
       if(!userLoggedIn || !currentUser) return showLogin();
       const descEl = document.getElementById('sceneDescInput') || document.getElementById('sceneDescInline');
       const budgetEl = document.getElementById('sceneBudgetInput') || document.getElementById('sceneBudgetInline');
+      const sizeEl = document.getElementById('sceneSizeInput') || document.getElementById('sceneSizeInline') || document.getElementById('sceneMetaSizeInput');
       const descValue = descEl ? (('value' in descEl) ? descEl.value : descEl.innerText) : '';
       const budgetValue = budgetEl ? (('value' in budgetEl) ? budgetEl.value : budgetEl.innerText) : '';
+      const sizeValue = sizeEl ? (('value' in sizeEl) ? sizeEl.value : sizeEl.innerText) : '';
       const budgetDigits = normalizeDigitsOnly(budgetValue);
       if(budgetEl){
         if('value' in budgetEl) budgetEl.value = budgetDigits;
         else budgetEl.innerText = budgetDigits;
       }
-      const description = composeSceneMeta(descValue, budgetDigits);
+      const description = composeSceneMeta(descValue, budgetDigits, sizeValue);
       await apiFetch(`${API_PREFIX}/collections/${collectionId}`, {
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
@@ -676,10 +818,12 @@
       const collectionId = sceneMetaEditingCollectionId;
       if(!collectionId) return;
       const budgetEl = document.getElementById('sceneMetaBudgetInput');
+      const sizeEl = document.getElementById('sceneMetaSizeInput');
       const descEl = document.getElementById('sceneMetaDescInput');
       const budget = budgetEl ? normalizeDigitsOnly(budgetEl.value) : '';
+      const size = sizeEl ? sizeEl.value : '';
       const description = descEl ? descEl.value : '';
-      const composed = composeSceneMeta(description, budget);
+      const composed = composeSceneMeta(description, budget, size);
       await apiFetch(`${API_PREFIX}/collections/${collectionId}`, {
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
@@ -739,7 +883,7 @@
         listEl.innerHTML = '';
         filtered.forEach(c => {
           const sceneMeta = parseSceneMeta(c.description || '');
-          const sub = [sceneMeta.budget ? `預算 ${sceneMeta.budget}` : '', sceneMeta.description || '無描述'].filter(Boolean).join(' ・ ');
+          const sub = [sceneMeta.budget ? `預算 ${sceneMeta.budget}` : '', sceneMeta.size ? `大小 ${sceneMeta.size}` : '', sceneMeta.description || '無描述'].filter(Boolean).join(' ・ ');
           const row = document.createElement('div');
           row.className = `maps-item${c.id === selectedCollectionDetailId ? ' active' : ''}`;
           row.onclick = () => selectCollection(c.id);
@@ -778,6 +922,10 @@
             <span id="sceneBudgetInline" class="scene-inline-edit" data-placeholder="未設定" contenteditable="true" oninput="onBudgetInlineInput(event, ${selectedCollection.id})" onblur="saveCollectionMeta(${selectedCollection.id}, { refresh: false, silent: true })" onkeydown="onInlineBudgetKeydown(event, ${selectedCollection.id})">${escapeHtml(normalizeDigitsOnly(selectedMeta.budget || ''))}</span>
           </div>
           <div class="scene-inline-row">
+            <span class="scene-inline-label">場景大小：</span>
+            <span id="sceneSizeInline" class="scene-inline-edit" data-placeholder="未設定" contenteditable="true" oninput="scheduleCollectionMetaSave(${selectedCollection.id})" onblur="saveCollectionMeta(${selectedCollection.id}, { refresh: false, silent: true })" onkeydown="onInlineBudgetKeydown(event, ${selectedCollection.id})">${escapeHtml(selectedMeta.size || '')}</span>
+          </div>
+          <div class="scene-inline-row">
             <span class="scene-inline-label">描述：</span>
             <div id="sceneDescInline" class="scene-inline-edit multiline" data-placeholder="未設定" contenteditable="true" oninput="scheduleCollectionMetaSave(${selectedCollection.id})" onblur="saveCollectionMeta(${selectedCollection.id}, { refresh: false, silent: true })">${(escapeHtml(selectedMeta.description || '')).replace(/\n/g, '<br>')}</div>
           </div>
@@ -797,7 +945,8 @@
         `;
       }).join('');
 
-      listEl.innerHTML = `${headerHtml}<div class="scene-product-list">${rowsHtml || '<div class="maps-empty">此場景尚無商品。</div>'}</div>`;
+      const emptyRowsHtml = `<div class="empty-add-wrap"><button class="empty-add-btn" title="前往商品頁挑選" onclick="switchView('feed')">+</button><div class="empty-add-tip">此場景尚無商品，點 + 回到商品頁挑選</div></div>`;
+      listEl.innerHTML = `${headerHtml}<div class="scene-product-list">${rowsHtml || emptyRowsHtml}</div>`;
       renderCollectionPreview(selectedCollection || null, items);
     }
 
@@ -1207,6 +1356,8 @@
     document.addEventListener('click', (e)=>{
       const picker = document.getElementById('drawerCollectionPicker');
       if(picker && !picker.contains(e.target)) toggleDrawerCollectionMenu(false);
+      const userMenu = document.getElementById('userMenu');
+      if(userMenu && !userMenu.contains(e.target)) closeUserMenu();
     });
 
     const scrollContainer=document.getElementById('mainScroll');
