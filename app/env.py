@@ -1,18 +1,19 @@
-from pathlib import Path
 import os
 
 
-def load_env_file() -> None:
-    env_path = Path(__file__).resolve().parent.parent / ".env"
-    if not env_path.exists():
-        return
-
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+def get_env(*keys: str, default: str | None = None) -> str | None:
+    for key in keys:
+        value = os.getenv(key)
+        if value is None:
             continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("'\"")
-        if key and key not in os.environ:
-            os.environ[key] = value
+        value = value.strip()
+        if value:
+            return value
+    return default
+
+
+def require_env(*keys: str) -> str:
+    value = get_env(*keys)
+    if value:
+        return value
+    raise RuntimeError(f"Missing required environment variable: {' / '.join(keys)}")

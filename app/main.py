@@ -15,7 +15,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from .database import Base, engine, get_db
-from .env import load_env_file
+from .env import get_env
 from .models import (
     AuthSession,
     Category,
@@ -55,9 +55,6 @@ from .schemas import (
 )
 from .migrations import run_schema_migrations
 from .seed import seed_data
-
-load_env_file()
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -272,12 +269,12 @@ def _serialize_collection(db: Session, collection: Collection) -> dict:
 
 
 def _line_redirect_uri(request: Request) -> str:
-    env = os.getenv("LINE_REDIRECT_URI")
+    env = get_env("LINE_REDIRECT_URI")
     return env or str(request.url_for("line_callback_oauth"))
 
 
 def _google_redirect_uri(request: Request) -> str:
-    env = os.getenv("GOOGLE_REDIRECT_URI")
+    env = get_env("GOOGLE_REDIRECT_URI")
     return env or str(request.url_for("google_callback_oauth"))
 
 
@@ -1030,7 +1027,7 @@ def delete_default_viewlist_item(item_id: int, user_id: int, db: Session = Depen
 
 @app.get("/api/v1/auth/line/start")
 def line_start(request: Request):
-    client_id = os.getenv("LINE_CLIENT_ID")
+    client_id = get_env("LINE_CLIENT_ID")
     if not client_id:
         raise HTTPException(status_code=500, detail="LINE_CLIENT_ID not configured")
 
@@ -1053,7 +1050,7 @@ def line_start(request: Request):
 
 @app.get("/api/v1/auth/google/start")
 def google_start(request: Request):
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_id = get_env("GOOGLE_CLIENT_ID")
     if not client_id:
         raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID not configured")
 
@@ -1092,8 +1089,8 @@ def line_callback_oauth(
     if not expected_state or expected_state != state:
         raise HTTPException(status_code=400, detail="Invalid state")
 
-    client_id = os.getenv("LINE_CLIENT_ID")
-    client_secret = os.getenv("LINE_CLIENT_SECRET")
+    client_id = get_env("LINE_CLIENT_ID")
+    client_secret = get_env("LINE_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise HTTPException(status_code=500, detail="LINE OAuth secret not configured")
 
@@ -1151,8 +1148,8 @@ def google_callback_oauth(
     if not expected_state or expected_state != state:
         raise HTTPException(status_code=400, detail="Invalid state")
 
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    client_id = get_env("GOOGLE_CLIENT_ID")
+    client_secret = get_env("GOOGLE_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise HTTPException(status_code=500, detail="GOOGLE OAuth secret not configured")
 

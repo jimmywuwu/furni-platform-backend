@@ -55,7 +55,7 @@ uvicorn app.main:app --reload
 
 目前支援 LINE Login 與 Google Login。
 
-請在專案根目錄建立 `.env`，填入：
+請直接在執行環境設定系統環境變數：
 
 ```bash
 LINE_CLIENT_ID=...
@@ -118,7 +118,7 @@ https://abc123.ngrok-free.app
 6. 同步更新這兩邊：
 
 - Provider Console 的 callback / redirect URL
-- 專案根目錄 `.env` 內對應的 redirect URI
+- 伺服器環境變數內對應的 redirect URI
 
 範例：
 
