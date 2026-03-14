@@ -20,8 +20,41 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     display_name: Mapped[str] = mapped_column(String(100))
+    role: Mapped[str] = mapped_column(String(20), default="customer")
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class OAuthIdentity(Base):
+    __tablename__ = "oauth_identities"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(32), index=True)
+    provider_user_id: Mapped[str] = mapped_column(String(255), index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Store(Base):
+    __tablename__ = "stores"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class StoreMembership(Base):
+    __tablename__ = "store_memberships"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"))
+    role_in_store: Mapped[str] = mapped_column(String(32), default="staff")
+    is_default: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
@@ -88,6 +121,7 @@ class Collection(Base):
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    store_id: Mapped[int | None] = mapped_column(ForeignKey("stores.id"), nullable=True)
     visibility: Mapped[str] = mapped_column(String(16), default="private")
     is_store_scene: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -170,6 +204,16 @@ class FeedSlot(Base):
     slot_type: Mapped[str] = mapped_column(String(50))
     ref_id: Mapped[int] = mapped_column(Integer)
     position: Mapped[int] = mapped_column(Integer)
+
+
+class HighlightProduct(Base):
+    __tablename__ = "highlight_products"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    section: Mapped[str] = mapped_column(String(32), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class Category(Base):

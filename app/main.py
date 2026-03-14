@@ -1,7 +1,9 @@
 ﻿from contextlib import asynccontextmanager
+import base64
 import json
 import os
 import secrets
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request as UrlRequest, urlopen
 
@@ -13,6 +15,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from .database import Base, engine, get_db
+from .env import load_env_file
 from .models import (
     AuthSession,
     Category,
@@ -21,8 +24,12 @@ from .models import (
     CollectionImage,
     CollectionItem,
     FeedSlot,
+    HighlightProduct,
+    OAuthIdentity,
     Product,
     ProductVariant,
+    Store,
+    StoreMembership,
     User,
     Viewlist,
     ViewlistItem,
@@ -48,6 +55,8 @@ from .schemas import (
 )
 from .migrations import run_schema_migrations
 from .seed import seed_data
+
+load_env_file()
 
 
 @asynccontextmanager
@@ -127,14 +136,28 @@ def _oauth_post_form(url: str, data: dict) -> dict:
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         method="POST",
     )
-    with urlopen(req, timeout=20) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="ignore")
+        detail = body or str(exc)
+        raise HTTPException(status_code=400, detail=detail) from exc
+    except URLError as exc:
+        raise HTTPException(status_code=502, detail="OAuth provider unavailable") from exc
 
 
 def _oauth_get_json(url: str, headers: dict | None = None) -> dict:
     req = UrlRequest(url, headers=headers or {}, method="GET")
-    with urlopen(req, timeout=20) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="ignore")
+        detail = body or str(exc)
+        raise HTTPException(status_code=400, detail=detail) from exc
+    except URLError as exc:
+        raise HTTPException(status_code=502, detail="OAuth provider unavailable") from exc
 
 
 def _get_or_create_user(db: Session, display_name: str, email: str | None) -> User:
@@ -153,11 +176,99 @@ def _get_or_create_user(db: Session, display_name: str, email: str | None) -> Us
     return user
 
 
+def _decode_jwt_payload(token: str | None) -> dict:
+    if not token:
+        return {}
+    parts = token.split(".")
+    if len(parts) < 2:
+        return {}
+    payload = parts[1]
+    padding = "=" * (-len(payload) % 4)
+    try:
+        decoded = base64.urlsafe_b64decode(payload + padding)
+        return json.loads(decoded.decode("utf-8"))
+    except (ValueError, json.JSONDecodeError):
+        return {}
+
+
+def _get_or_create_oauth_user(
+    db: Session,
+    provider: str,
+    provider_user_id: str,
+    display_name: str,
+    email: str | None,
+) -> User:
+    identity = db.scalar(
+        select(OAuthIdentity).where(
+            OAuthIdentity.provider == provider,
+            OAuthIdentity.provider_user_id == provider_user_id,
+        )
+    )
+    if identity:
+        user = db.scalar(select(User).where(User.id == identity.user_id))
+        if not user:
+            raise HTTPException(status_code=404, detail="Linked user not found")
+        updated = False
+        if display_name and user.display_name != display_name:
+            user.display_name = display_name
+            updated = True
+        if email and user.email != email:
+            user.email = email
+            identity.email = email
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(user)
+        return user
+
+    user = None
+    if email:
+        user = db.scalar(select(User).where(User.email == email))
+    if not user:
+        if email:
+            user = _get_or_create_user(db, display_name=display_name, email=email)
+        else:
+            user = User(display_name=display_name, email=None)
+            db.add(user)
+            db.flush()
+            _get_or_create_wishlist(db, user.id)
+            _get_or_create_viewlist(db, user.id)
+
+    identity = OAuthIdentity(
+        user_id=user.id,
+        provider=provider,
+        provider_user_id=provider_user_id,
+        email=email,
+    )
+    db.add(identity)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def _normalize_visibility(value: str | None) -> str:
     v = (value or "private").strip().lower()
     if v not in {"private", "public"}:
         return "private"
     return v
+
+
+def _serialize_collection(db: Session, collection: Collection) -> dict:
+    store_name = None
+    if collection.store_id:
+        store = db.scalar(select(Store).where(Store.id == collection.store_id))
+        store_name = store.name if store else None
+    return {
+        "id": collection.id,
+        "owner_id": collection.owner_id,
+        "store_id": collection.store_id,
+        "store_name": store_name,
+        "title": collection.title,
+        "description": collection.description,
+        "cover_image_url": collection.cover_image_url,
+        "visibility": collection.visibility,
+        "is_store_scene": bool(collection.is_store_scene) or (collection.store_id is not None),
+    }
 
 
 def _line_redirect_uri(request: Request) -> str:
@@ -168,6 +279,10 @@ def _line_redirect_uri(request: Request) -> str:
 def _google_redirect_uri(request: Request) -> str:
     env = os.getenv("GOOGLE_REDIRECT_URI")
     return env or str(request.url_for("google_callback_oauth"))
+
+
+def _oauth_success_redirect(provider: str, token: str) -> RedirectResponse:
+    return RedirectResponse(url=f"/#token={token}&provider={provider}")
 
 
 @app.get("/")
@@ -291,6 +406,118 @@ def get_product_drawer(product_id: int, db: Session = Depends(get_db)):
     return get_product(product_id=product_id, db=db)
 
 
+@app.get("/api/v1/products/highlights/latest")
+def get_latest_products(
+    limit: int = Query(default=12, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    slots = db.scalars(
+        select(HighlightProduct)
+        .where(HighlightProduct.section == "latest")
+        .order_by(HighlightProduct.position.asc(), HighlightProduct.id.asc())
+        .limit(limit)
+    ).all()
+    if slots:
+        items: list[FeedItemOut] = []
+        for slot in slots:
+            product = db.scalar(select(Product).where(Product.id == slot.product_id))
+            if not product:
+                continue
+            min_price = db.scalar(
+                select(func.min(ProductVariant.price)).where(ProductVariant.product_id == product.id)
+            )
+            items.append(
+                FeedItemOut(
+                    type="product",
+                    id=product.id,
+                    name=product.name,
+                    image=product.cover_image_url,
+                    price=float(min_price) if min_price is not None else None,
+                )
+            )
+        return {"items": items}
+
+    rows = db.scalars(
+        select(Product)
+        .order_by(Product.created_at.desc(), Product.id.desc())
+        .limit(limit)
+    ).all()
+    items: list[FeedItemOut] = []
+    for product in rows:
+        min_price = db.scalar(
+            select(func.min(ProductVariant.price)).where(ProductVariant.product_id == product.id)
+        )
+        items.append(
+            FeedItemOut(
+                type="product",
+                id=product.id,
+                name=product.name,
+                image=product.cover_image_url,
+                price=float(min_price) if min_price is not None else None,
+            )
+        )
+    return {"items": items}
+
+
+@app.get("/api/v1/products/highlights/discount")
+def get_discount_products(
+    limit: int = Query(default=12, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    slots = db.scalars(
+        select(HighlightProduct)
+        .where(HighlightProduct.section == "discount")
+        .order_by(HighlightProduct.position.asc(), HighlightProduct.id.asc())
+        .limit(limit)
+    ).all()
+    if slots:
+        items: list[FeedItemOut] = []
+        for slot in slots:
+            product = db.scalar(select(Product).where(Product.id == slot.product_id))
+            if not product:
+                continue
+            min_price = db.scalar(
+                select(func.min(ProductVariant.price)).where(ProductVariant.product_id == product.id)
+            )
+            items.append(
+                FeedItemOut(
+                    type="product",
+                    id=product.id,
+                    name=product.name,
+                    image=product.cover_image_url,
+                    price=float(min_price) if min_price is not None else None,
+                )
+            )
+        return {"items": items}
+
+    price_subq = (
+        select(
+            ProductVariant.product_id.label("product_id"),
+            func.min(ProductVariant.price).label("min_price"),
+        )
+        .group_by(ProductVariant.product_id)
+        .subquery()
+    )
+    rows = db.execute(
+        select(Product, price_subq.c.min_price)
+        .join(price_subq, price_subq.c.product_id == Product.id)
+        .order_by(price_subq.c.min_price.asc(), Product.created_at.desc(), Product.id.desc())
+        .limit(limit)
+    ).all()
+    items: list[FeedItemOut] = []
+    for product, min_price in rows:
+        items.append(
+            FeedItemOut(
+                type="product",
+                id=product.id,
+                name=product.name,
+                image=product.cover_image_url,
+                price=float(min_price) if min_price is not None else None,
+            )
+        )
+    return {"items": items}
+
+
 @app.post("/api/v1/wishlist/items")
 def add_wishlist_item(payload: AddWishlistItemIn, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.id == payload.user_id))
@@ -364,14 +591,28 @@ def create_collection(payload: CreateCollectionIn, db: Session = Depends(get_db)
     user = db.scalar(select(User).where(User.id == payload.owner_id))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    store_id = payload.store_id
+    if store_id is not None:
+        store = db.scalar(select(Store).where(Store.id == store_id, Store.is_active == True))
+        if not store:
+            raise HTTPException(status_code=404, detail="Store not found")
+        membership = db.scalar(
+            select(StoreMembership).where(
+                StoreMembership.user_id == payload.owner_id,
+                StoreMembership.store_id == store_id,
+            )
+        )
+        if not membership and store.owner_user_id != payload.owner_id:
+            raise HTTPException(status_code=403, detail="No permission for this store")
 
     collection = Collection(
         owner_id=payload.owner_id,
         title=payload.title,
         description=payload.description,
         cover_image_url=payload.cover_image_url,
+        store_id=store_id,
         visibility=_normalize_visibility(payload.visibility),
-        is_store_scene=bool(payload.is_store_scene),
+        is_store_scene=bool(payload.is_store_scene) or (store_id is not None),
     )
     db.add(collection)
     db.commit()
@@ -385,20 +626,7 @@ def list_collections(owner_id: int | None = None, db: Session = Depends(get_db))
     if owner_id is not None:
         stmt = stmt.where(Collection.owner_id == owner_id)
     rows = db.scalars(stmt).all()
-    return {
-        "items": [
-            {
-                "id": c.id,
-                "owner_id": c.owner_id,
-                "title": c.title,
-                "description": c.description,
-                "cover_image_url": c.cover_image_url,
-                "visibility": c.visibility,
-                "is_store_scene": bool(c.is_store_scene),
-            }
-            for c in rows
-        ]
-    }
+    return {"items": [_serialize_collection(db, c) for c in rows]}
 
 
 @app.patch("/api/v1/collections/{collection_id}")
@@ -413,10 +641,25 @@ def update_collection(collection_id: int, payload: UpdateCollectionIn, db: Sessi
         collection.description = payload.description
     if payload.cover_image_url is not None:
         collection.cover_image_url = payload.cover_image_url
+    if payload.store_id is not None:
+        store = db.scalar(select(Store).where(Store.id == payload.store_id, Store.is_active == True))
+        if not store:
+            raise HTTPException(status_code=404, detail="Store not found")
+        membership = db.scalar(
+            select(StoreMembership).where(
+                StoreMembership.user_id == collection.owner_id,
+                StoreMembership.store_id == payload.store_id,
+            )
+        )
+        if not membership and store.owner_user_id != collection.owner_id:
+            raise HTTPException(status_code=403, detail="No permission for this store")
+        collection.store_id = payload.store_id
     if payload.visibility is not None:
         collection.visibility = _normalize_visibility(payload.visibility)
     if payload.is_store_scene is not None:
         collection.is_store_scene = bool(payload.is_store_scene)
+    if collection.store_id is not None:
+        collection.is_store_scene = True
 
     db.commit()
     db.refresh(collection)
@@ -456,20 +699,7 @@ def search_public_collections(
             )
         )
     rows = db.scalars(stmt.order_by(Collection.id.desc()).limit(limit)).all()
-    return {
-        "items": [
-            {
-                "id": c.id,
-                "owner_id": c.owner_id,
-                "title": c.title,
-                "description": c.description,
-                "cover_image_url": c.cover_image_url,
-                "visibility": c.visibility,
-                "is_store_scene": bool(c.is_store_scene),
-            }
-            for c in rows
-        ]
-    }
+    return {"items": [_serialize_collection(db, c) for c in rows]}
 
 
 @app.get("/api/v1/collections/store/latest")
@@ -479,24 +709,14 @@ def get_latest_store_collections(
 ):
     rows = db.scalars(
         select(Collection)
-        .where(Collection.visibility == "public", Collection.is_store_scene == True)
+        .where(
+            Collection.visibility == "public",
+            or_(Collection.store_id.is_not(None), Collection.is_store_scene == True),
+        )
         .order_by(Collection.id.desc())
         .limit(limit)
     ).all()
-    return {
-        "items": [
-            {
-                "id": c.id,
-                "owner_id": c.owner_id,
-                "title": c.title,
-                "description": c.description,
-                "cover_image_url": c.cover_image_url,
-                "visibility": c.visibility,
-                "is_store_scene": bool(c.is_store_scene),
-            }
-            for c in rows
-        ]
-    }
+    return {"items": [_serialize_collection(db, c) for c in rows]}
 
 
 @app.post("/api/v1/collections/{collection_id}/items")
@@ -542,10 +762,12 @@ def list_collection_items(collection_id: int, db: Session = Depends(get_db)):
     return {
         "collection": {
             "id": collection.id,
+            "owner_id": collection.owner_id,
+            "store_id": collection.store_id,
             "title": collection.title,
             "description": collection.description,
             "visibility": collection.visibility,
-            "is_store_scene": bool(collection.is_store_scene),
+            "is_store_scene": bool(collection.is_store_scene) or (collection.store_id is not None),
         },
         "items": [
             {
@@ -723,20 +945,7 @@ def get_user_collections(user_id: int, db: Session = Depends(get_db)):
     rows = db.scalars(
         select(Collection).where(Collection.owner_id == user_id).order_by(Collection.id.desc())
     ).all()
-    return {
-        "items": [
-            {
-                "id": c.id,
-                "owner_id": c.owner_id,
-                "title": c.title,
-                "description": c.description,
-                "cover_image_url": c.cover_image_url,
-                "visibility": c.visibility,
-                "is_store_scene": bool(c.is_store_scene),
-            }
-            for c in rows
-        ]
-    }
+    return {"items": [_serialize_collection(db, c) for c in rows]}
 
 
 @app.get("/api/v1/wishlists/default")
@@ -870,11 +1079,16 @@ def google_start(request: Request):
 @app.get("/api/v1/auth/line/callback")
 def line_callback_oauth(
     request: Request,
-    code: str,
-    state: str,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
 ):
+    if error:
+        raise HTTPException(status_code=400, detail=f"LINE login failed: {error}")
     expected_state = request.cookies.get("oauth_state_line")
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing LINE OAuth callback parameters")
     if not expected_state or expected_state != state:
         raise HTTPException(status_code=400, detail="Invalid state")
 
@@ -901,11 +1115,22 @@ def line_callback_oauth(
         "https://api.line.me/v2/profile",
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    display_name = (profile.get("displayName") or "LINE User").strip()
-    user = _get_or_create_user(db, display_name=display_name, email=None)
+    id_token_payload = _decode_jwt_payload(token_data.get("id_token"))
+    provider_user_id = str(profile.get("userId") or id_token_payload.get("sub") or "").strip()
+    if not provider_user_id:
+        raise HTTPException(status_code=400, detail="LINE user identifier missing")
+    display_name = (profile.get("displayName") or id_token_payload.get("name") or "LINE User").strip()
+    email = id_token_payload.get("email")
+    user = _get_or_create_oauth_user(
+        db,
+        provider="line",
+        provider_user_id=provider_user_id,
+        display_name=display_name,
+        email=email,
+    )
     auth = _create_auth_session(db, user, provider="line")
 
-    resp = RedirectResponse(url=f"/?token={auth.token}&provider=line")
+    resp = _oauth_success_redirect(provider="line", token=auth.token)
     resp.delete_cookie("oauth_state_line")
     return resp
 
@@ -913,11 +1138,16 @@ def line_callback_oauth(
 @app.get("/api/v1/auth/google/callback")
 def google_callback_oauth(
     request: Request,
-    code: str,
-    state: str,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
 ):
+    if error:
+        raise HTTPException(status_code=400, detail=f"Google login failed: {error}")
     expected_state = request.cookies.get("oauth_state_google")
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing Google OAuth callback parameters")
     if not expected_state or expected_state != state:
         raise HTTPException(status_code=400, detail="Invalid state")
 
@@ -944,12 +1174,21 @@ def google_callback_oauth(
         "https://openidconnect.googleapis.com/v1/userinfo",
         headers={"Authorization": f"Bearer {access_token}"},
     )
+    provider_user_id = str(profile.get("sub") or "").strip()
+    if not provider_user_id:
+        raise HTTPException(status_code=400, detail="Google user identifier missing")
     display_name = (profile.get("name") or profile.get("email") or "Google User").strip()
     email = profile.get("email")
-    user = _get_or_create_user(db, display_name=display_name, email=email)
+    user = _get_or_create_oauth_user(
+        db,
+        provider="google",
+        provider_user_id=provider_user_id,
+        display_name=display_name,
+        email=email,
+    )
     auth = _create_auth_session(db, user, provider="google")
 
-    resp = RedirectResponse(url=f"/?token={auth.token}&provider=google")
+    resp = _oauth_success_redirect(provider="google", token=auth.token)
     resp.delete_cookie("oauth_state_google")
     return resp
 

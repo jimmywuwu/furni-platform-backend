@@ -22,7 +22,11 @@
     .newsletter-sub { font-size:12px; color:#8d8d8d; margin:0 0 12px; line-height:1.4; }
     .newsletter input { width:100%; border:1px solid #e2e2e2; background:#f2f2f2; border-radius:2px; padding:9px 10px; font-size:12px; color:#5f5f5f; }
     .newsletter button { margin-top:10px; background:#000; color:#fff; border:none; padding:9px 14px; font-size:12px; font-weight:400; cursor:pointer; }
-    .sidebar-social { margin-top:auto; display:flex; gap:14px; color:#8c8c8c; font-size:14px; }
+    .sidebar-social { display:flex; gap:10px; margin-top:14px; }
+    .sidebar-social-link { width:36px; height:36px; border:1px solid #d8d8d3; border-radius:999px; background:#fff; color:#202020; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:background .18s ease, border-color .18s ease, color .18s ease; }
+    .sidebar-social-link:hover { background:#111; border-color:#111; color:#fff; }
+    .sidebar-social-link svg { width:18px; height:18px; fill:currentColor; display:block; }
+    .sidebar-spacer { flex:1; }
     .sidebar-copyright { margin-top:8px; color:#222; font-size:12px; font-weight:400; }
 
     .main { flex:1; padding:12px 16px; overflow:auto; }
@@ -57,6 +61,33 @@
     .title { margin:4px 0 14px; text-align:left; padding:0 4px; }
     .title h1 { margin:0; font-size:24px; }
     .title p { margin-top:6px; color:var(--muted); font-size:13px; }
+    .store-scenes { margin:0 4px 14px; }
+    .store-scenes-head { display:flex; align-items:end; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .store-scenes-head h2 { margin:0; font-size:24px; font-weight:700; color:#111; }
+    .store-scenes-head p { margin:4px 0 0; font-size:14px; color:#666; }
+    .store-scenes-wrap { position:relative; }
+    .store-scenes-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(260px, 34%); gap:14px; overflow:hidden; scroll-snap-type:x mandatory; padding-bottom:0; }
+    .store-scene-card { border:1px solid #ececec; border-radius:12px; overflow:hidden; background:#fff; scroll-snap-align:start; }
+    .store-scene-card img { width:100%; height:420px; object-fit:cover; display:block; background:#f7f7f7; }
+    .store-scene-meta { padding:8px 10px 10px; }
+    .store-scene-title { font-size:13px; font-weight:600; color:#171717; }
+    .store-scene-sub { margin-top:3px; font-size:11px; color:#777; }
+    .store-scenes-nav { position:absolute; top:45%; transform:translateY(-50%); width:38px; height:38px; border:none; border-radius:999px; background:#111; color:#fff; font-size:24px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,.25); }
+    .store-scenes-nav:hover { background:#000; }
+    .store-scenes-prev { left:6px; }
+    .store-scenes-next { right:6px; }
+    .promo-rows { margin:0 4px 14px; display:flex; flex-direction:column; gap:14px; }
+    .promo-row-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .promo-row-title { margin:0; font-size:24px; font-weight:700; color:#111; }
+    .promo-row-wrap { position:relative; }
+    .promo-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(220px, 24%); gap:12px; overflow:hidden; padding-bottom:0; }
+    .promo-card { border:1px solid #ececec; border-radius:12px; overflow:hidden; background:#fff; cursor:pointer; }
+    .promo-card .product-img { border-radius:0; aspect-ratio:4/5; object-fit:contain; background:#fff; }
+    .promo-card .pin-meta { padding:8px 10px 10px; }
+    .promo-nav { position:absolute; top:45%; transform:translateY(-50%); width:34px; height:34px; border:none; border-radius:999px; background:#111; color:#fff; font-size:22px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,.25); }
+    .promo-nav:hover { background:#000; }
+    .promo-prev { left:6px; }
+    .promo-next { right:6px; }
     .feed-tools { display:flex; justify-content:flex-start; margin:0 0 14px; padding:0 4px; }
     .feed-tools select { border:1px solid #000; border-radius:999px; padding:10px 14px; background:#fff; color:#000; }
     .home-wrap { margin:0; background:#fff; }
@@ -76,6 +107,25 @@
     .contact-btn-secondary { border:1px solid #000; background:#fff; color:#000; border-radius:999px; padding:10px 16px; font-size:14px; cursor:pointer; }
     .contact-map { border-radius:14px; overflow:hidden; border:1px solid #ece7de; background:#fff; min-height:420px; }
     .contact-map iframe { width:100%; height:420px; border:0; display:block; }
+    .store-scene-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1300; padding:20px; }
+    .store-scene-modal.open { display:flex; }
+    .store-scene-modal-box { width:min(960px, 96vw); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; border:1px solid #e8e8e8; padding:16px; position:relative; }
+    .store-scene-modal-close { position:absolute; right:10px; top:10px; border:none; background:#fff; font-size:22px; cursor:pointer; }
+    .store-scene-modal-grid { display:grid; grid-template-columns:320px 1fr; gap:14px; }
+    .store-scene-cover { width:100%; height:280px; object-fit:cover; border-radius:10px; background:#f6f6f6; }
+    .store-scene-items { border:1px solid #ededed; border-radius:10px; overflow:hidden; }
+    .store-scene-item { padding:10px 12px; border-bottom:1px solid #f1f1f1; cursor:pointer; }
+    .store-scene-item:last-child { border-bottom:none; }
+    .store-scene-item:hover { background:#fafafa; }
+    .store-scene-item.active { background:#f6f6f6; }
+    .store-scene-item-name { font-size:14px; font-weight:600; color:#171717; }
+    .store-scene-item-sub { margin-top:3px; font-size:12px; color:#666; }
+    .store-scene-detail { border:1px solid #ededed; border-radius:10px; background:#fff; min-height:420px; padding:12px; }
+    .store-scene-detail img { width:100%; height:260px; object-fit:contain; border-radius:8px; background:#f7f7f7; border:1px solid #f0f0f0; }
+    .store-scene-detail h4 { margin:10px 0 6px; font-size:16px; font-weight:600; color:#111; }
+    .store-scene-detail .meta { font-size:12px; color:#666; margin-bottom:8px; }
+    .store-scene-detail .price { font-size:14px; color:#111; margin-bottom:8px; }
+    .store-scene-detail .desc { font-size:13px; color:#555; line-height:1.6; white-space:pre-wrap; }
 
     .feed { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:16px; }
     .product-card { position:relative; display:block; width:100%; margin:0; text-decoration:none; color:inherit; cursor:pointer; }
@@ -94,7 +144,7 @@
     .panel-card h4 { margin:10px 0 4px; font-size:14px; line-height:1.3; }
     .panel-row { display:flex; gap:8px; margin-top:10px; }
     .btn-small { border:1px solid #d2d2cc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
-    .btn-danger { border:1px solid #d97373; color:#aa2f2f; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
+    .btn-danger { border:1px solid #000; color:#000; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
     .collections-header { display:flex; gap:8px; margin-bottom:12px; }
     .collections-header input { flex:1; border:1px solid #d9d9d3; border-radius:8px; padding:10px; }
     .collection-create-footer { border-top:1px solid #ececec; padding:10px; display:flex; justify-content:center; background:#fff; }
@@ -109,28 +159,41 @@
     .quick-modal-box input { width:100%; border:1px solid #d9d9d3; border-radius:10px; padding:10px; }
     .quick-modal-box textarea { width:100%; border:1px solid #d9d9d3; border-radius:10px; padding:10px; min-height:120px; resize:vertical; margin-top:8px; }
     .quick-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
-    .dialog-message { color:#5c544a; font-size:14px; line-height:1.5; margin-top:4px; }
+    .dialog-message { color:#5c544a; font-size:14px; line-height:1.5; margin-top:4px; white-space:pre-line; }
     .btn-danger-solid { background:#b73a3a; color:#fff; border:1px solid #b73a3a; border-radius:8px; padding:8px 12px; cursor:pointer; }
-    .maps-shell { display:grid; grid-template-columns: 420px 1fr; gap:0; background:#fff; border:1px solid #ddd; border-radius:12px; overflow:hidden; min-height:620px; }
+    .maps-shell { display:grid; grid-template-columns: 420px 1fr; gap:0; background:#fff; border:1px solid #ececec; border-radius:12px; overflow:hidden; min-height:620px; }
     .maps-rail { background:#f3f5f6; border-right:1px solid #e2e4e5; padding:12px 8px; display:flex; flex-direction:column; gap:10px; align-items:center; }
     .maps-rail-item { width:46px; height:46px; border-radius:10px; background:#fff; border:1px solid #dde1e2; display:flex; align-items:center; justify-content:center; font-size:11px; color:#5b6166; text-align:center; }
-    .maps-panel { background:#fff; border-right:1px solid #ececec; display:flex; flex-direction:column; }
+    .maps-panel { background:#fff; border-right:1px solid #efefef; display:flex; flex-direction:column; }
     .maps-tabs { display:flex; border-bottom:1px solid #ececec; }
     .maps-tab { flex:1; text-align:center; padding:10px; font-size:13px; color:#777; }
     .maps-tab.active { color:#111; border-bottom:3px solid #0f9d8f; font-weight:700; }
     .maps-list { overflow:auto; flex:1; }
     .maps-item { padding:12px 14px; border-bottom:1px solid #f0f0ec; cursor:pointer; }
-    .maps-item:hover { background:#f9fbfc; }
-    .maps-item.active { background:#eef7f8; }
+    .maps-item:hover { background:#fafafa; }
+    .maps-item.active { background:#f7f7f7; }
     .maps-item-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .maps-item-delete { border:none; background:transparent; color:#111; font-size:22px; line-height:1; font-weight:700; cursor:pointer; padding:0 2px; }
     .maps-item-delete:hover { color:#000; }
     .maps-item-title { font-size:15px; font-weight:600; }
     .maps-item-sub { font-size:12px; color:#777; margin-top:4px; }
-    .maps-preview { padding:16px; background:#fafaf8; }
+    .maps-preview { padding:16px; background:#fff; }
     .maps-preview img { width:100%; max-height:320px; object-fit:contain; border-radius:10px; background:#ffffff; }
     .maps-preview h3 { margin:12px 0 8px; }
     .maps-empty { padding:18px; color:#6b6b66; font-size:13px; }
+    .decision-panel { border:1px solid #ededed; border-radius:12px; background:#fff; padding:12px; margin-bottom:12px; }
+    .decision-title { font-size:14px; font-weight:600; color:#1f1f1f; margin-bottom:8px; }
+    .decision-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .decision-stat { border:1px solid #efefef; border-radius:10px; padding:8px; background:#fff; }
+    .decision-k { font-size:11px; color:#777; }
+    .decision-v { margin-top:4px; font-size:14px; font-weight:600; color:#111; }
+    .decision-v.warn { color:#a21f1f; }
+    .decision-progress { margin-top:10px; }
+    .decision-progress-track { height:8px; background:#f1f1f1; border-radius:999px; overflow:hidden; }
+    .decision-progress-fill { height:100%; background:#222; }
+    .decision-line { margin-top:6px; font-size:12px; color:#666; }
+    .missing-list { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .missing-chip { font-size:11px; border:1px solid #e3e3e3; border-radius:999px; padding:3px 8px; background:#fff; color:#333; }
     .maps-preview-actions { display:flex; gap:8px; margin-top:10px; }
     .scene-meta-editor { margin-top:10px; display:flex; flex-direction:column; gap:10px; background:#fff; border:1px solid #e8dfd2; border-radius:12px; padding:12px; max-width:720px; }
     .scene-meta-top { display:grid; grid-template-columns:minmax(180px,320px) auto; gap:10px; align-items:center; }
@@ -138,18 +201,18 @@
     .scene-meta-editor textarea { min-height:116px; resize:vertical; line-height:1.55; }
     .scene-save-btn { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
     .scene-save-hint { font-size:12px; color:#7b7267; }
-    .scene-level-header { padding:10px 12px; border-bottom:1px solid #ece4d7; background:#fff; }
+    .scene-level-header { padding:10px 12px; border-bottom:1px solid #efefef; background:#fff; }
     .scene-back-btn { border:1px solid #ddd3c6; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer; font-size:12px; }
     .scene-meta-line { margin-top:8px; font-size:12px; color:#665d53; line-height:1.5; }
     .scene-inline-row { margin-top:8px; font-size:12px; color:#665d53; line-height:1.5; }
     .scene-inline-label { color:#7a7167; margin-right:6px; }
     .scene-inline-edit { display:inline-block; min-width:120px; padding:2px 6px; border-radius:6px; border:1px dashed transparent; cursor:text; }
     .scene-inline-edit:empty::before { content:attr(data-placeholder); color:#9a9187; }
-    .scene-inline-edit:hover, .scene-inline-edit:focus { background:#f8f4ed; border-color:#d9cfbf; outline:none; }
+    .scene-inline-edit:hover, .scene-inline-edit:focus { background:#fafafa; border-color:#d8d8d8; outline:none; }
     .scene-inline-edit.multiline { display:block; margin-top:4px; min-height:44px; white-space:pre-wrap; }
     .scene-product-list { display:flex; flex-direction:column; }
     .scene-product-row { height:72px; padding:10px 12px; border-bottom:1px solid #f1ece4; cursor:pointer; display:flex; flex-direction:column; justify-content:center; }
-    .scene-product-row.active { background:#eef7f8; }
+    .scene-product-row.active { background:#f7f7f7; }
     .scene-product-title { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .scene-product-sub { margin-top:3px; font-size:12px; color:#7a7268; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
@@ -207,18 +270,25 @@
     .login-box { width:360px; background:#fff; border-radius:8px; padding:28px; }
     .login-input { width:100%; padding:11px 12px; border:1px solid #d9d9d3; margin-top:10px; border-radius:6px; }
     .line-login-btn { width:100%; margin-top:14px; padding:12px; background:#06C755; color:#fff; border:none; cursor:pointer; border-radius:6px; }
-    .google-login-btn { width:100%; margin-top:10px; padding:12px; background:#fff; color:#1f1f1f; border:1px solid #d4d4cf; cursor:pointer; border-radius:6px; }
-    .login-helper { margin-top:10px; color:#777; font-size:12px; }
+    .google-login-btn { width:100%; margin-top:10px; padding:12px; background:#fff; color:#1f1f1f; border:1px solid #d4d4cf; cursor:pointer; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .google-login-icon { width:18px; height:18px; display:block; }
     .login-close { text-align:center; margin-top:12px; color:#767672; cursor:pointer; }
 
     .scene-modal { position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; z-index:1200; padding:24px; }
     .scene-modal.open { display:flex; }
     .scene-modal-img { max-width:min(92vw,1200px); max-height:88vh; border-radius:10px; object-fit:contain; background:#111; }
     .scene-modal-close { position:absolute; top:18px; right:22px; border:none; background:transparent; color:#fff; font-size:34px; cursor:pointer; }
+    .side-toast { position:fixed; right:18px; bottom:20px; z-index:1400; width:min(360px, 92vw); background:#111; color:#fff; border:1px solid #2f2f2f; border-radius:12px; box-shadow:0 14px 30px rgba(0,0,0,.28); padding:12px; transform:translateX(120%); opacity:0; transition:transform .28s ease, opacity .28s ease; pointer-events:none; }
+    .side-toast.open { transform:translateX(0); opacity:1; pointer-events:auto; }
+    .side-toast-title { font-size:14px; font-weight:700; margin:0 0 4px; }
+    .side-toast-text { font-size:13px; color:#d8d8d8; margin:0; }
+    .side-toast-actions { margin-top:10px; display:flex; justify-content:flex-end; gap:8px; }
+    .side-toast-btn { border:1px solid #3a3a3a; background:#1c1c1c; color:#fff; border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; }
+    .side-toast-btn.primary { border-color:#fff; background:#fff; color:#111; }
 
     @media (max-width:1240px) { .feed { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
     @media (max-width:980px) { .sidebar { display:none; } .main { padding:12px; } .feed { grid-template-columns:repeat(3, minmax(0, 1fr)); } .user-bar { gap:8px; } .drawer { width:100vw; } .drawer-main-image { height:220px; } }
-    @media (max-width:680px) { .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); } .top-search { height:40px; min-width:0; } .hero { height:280px; } .about-hero { height:auto; padding:48px 16px 26px; } .about-hero h1 { font-size:28px; } .about-content { padding:22px 16px 10px; } .about-content h2 { font-size:26px; } .about-content p { font-size:15px; line-height:1.8; } .contact-wrap { padding:10px 0; } .contact-shell { grid-template-columns:1fr; gap:12px; } .contact-name { font-size:22px; } .contact-line { font-size:15px; } .contact-map { min-height:320px; } .contact-map iframe { height:320px; } }
+    @media (max-width:680px) { .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); } .top-search { height:40px; min-width:0; } .hero { height:280px; } .store-scenes-head h2 { font-size:22px; } .store-scenes-head p { font-size:13px; } .store-scenes-track { grid-auto-columns:82%; gap:10px; } .store-scene-card img { height:300px; } .store-scenes-nav { width:34px; height:34px; font-size:20px; } .store-scene-modal-grid { grid-template-columns:1fr; } .about-hero { height:auto; padding:48px 16px 26px; } .about-hero h1 { font-size:28px; } .about-content { padding:22px 16px 10px; } .about-content h2 { font-size:26px; } .about-content p { font-size:15px; line-height:1.8; } .contact-wrap { padding:10px 0; } .contact-shell { grid-template-columns:1fr; gap:12px; } .contact-name { font-size:22px; } .contact-line { font-size:15px; } .contact-map { min-height:320px; } .contact-map iframe { height:320px; } }
   </style>
 </head>
 <body>
@@ -277,8 +347,18 @@
         <button>訂閱</button>
       </div>
       <div class="sidebar-social">
-        <span>f</span><span>ig</span><span>p</span>
+        <a class="sidebar-social-link" href="https://www.facebook.com/artdavidfield" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.6c0-.9.3-1.6 1.7-1.6H17V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.4v2.2H7.5v3.2h2.8V22h3.2z"/>
+          </svg>
+        </a>
+        <a class="sidebar-social-link" href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm0 1.9A3.9 3.9 0 0 0 3.9 7.8v8.4a3.9 3.9 0 0 0 3.9 3.9h8.4a3.9 3.9 0 0 0 3.9-3.9V7.8a3.9 3.9 0 0 0-3.9-3.9H7.8zm8.9 1.5a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 1.9a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 0 0 0-6.2z"/>
+          </svg>
+        </a>
       </div>
+      <div class="sidebar-spacer"></div>
       <div class="sidebar-copyright">&copy; By DavidField</div>
     </div>
 
@@ -324,6 +404,41 @@
         <div class="slide"><img src="/static/hero-2.jpg" alt="hero2" /></div>
         <button class="arrow left" onclick="prevSlide()">‹</button><button class="arrow right" onclick="nextSlide()">›</button>
         <div class="hero-overlay">實體門市本週新品到貨中</div>
+      </div>
+      <div class="store-scenes">
+        <div class="store-scenes-head">
+          <div>
+            <h2>店家精選場景</h2>
+            <p>門市搭配師本週推薦</p>
+          </div>
+        </div>
+        <div class="store-scenes-wrap">
+          <div id="storeScenesTrack" class="store-scenes-track"></div>
+          <button class="store-scenes-nav store-scenes-prev" onclick="scrollStoreScenes(-1)" title="上一組">‹</button>
+          <button class="store-scenes-nav store-scenes-next" onclick="scrollStoreScenes(1)" title="下一組">›</button>
+        </div>
+      </div>
+      <div class="promo-rows">
+        <div class="promo-row">
+          <div class="promo-row-head">
+            <h3 class="promo-row-title">折扣中</h3>
+          </div>
+          <div class="promo-row-wrap">
+            <div id="discountTrack" class="promo-track"></div>
+            <button class="promo-nav promo-prev" onclick="scrollPromoTrack('discountTrack', -1)" title="上一組">‹</button>
+            <button class="promo-nav promo-next" onclick="scrollPromoTrack('discountTrack', 1)" title="下一組">›</button>
+          </div>
+        </div>
+        <div class="promo-row">
+          <div class="promo-row-head">
+            <h3 class="promo-row-title">最新商品</h3>
+          </div>
+          <div class="promo-row-wrap">
+            <div id="latestTrack" class="promo-track"></div>
+            <button class="promo-nav promo-prev" onclick="scrollPromoTrack('latestTrack', -1)" title="上一組">‹</button>
+            <button class="promo-nav promo-next" onclick="scrollPromoTrack('latestTrack', 1)" title="下一組">›</button>
+          </div>
+        </div>
       </div>
       <div class="title"><h1>精選家具</h1><p>探索新品、挑選 SKU、直接加入收藏與門市清單</p></div>
       <div class="feed-tools">
@@ -373,17 +488,21 @@
     </div>
   </div>
 
-  <div id="loginModal" class="login-modal">
+    <div id="loginModal" class="login-modal">
     <div class="login-box">
       <h3>登入後可使用完整功能</h3>
       <p>登入後可以：</p>
       <ul><li>建立場景清單</li><li>將商品加入場景</li><li>同步你的場景收藏</li></ul>
-      <input id="loginDisplayName" class="login-input" placeholder="輸入你的名稱" />
-      <input id="loginEmail" class="login-input" placeholder="電子郵件（可選）" />
       <button class="line-login-btn" onclick="startOAuth('line')">使用 LINE 登入</button>
-      <button class="google-login-btn" onclick="startOAuth('google')">使用 Google 登入</button>
-      <button class="google-login-btn" onclick="loginWithProfile()">測試登入（本地）</button>
-      <div class="login-helper">正式環境請在後端設定 OAuth Client 參數。</div>
+      <button class="google-login-btn" onclick="startOAuth('google')">
+        <svg class="google-login-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.8-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3 14.7 2 12 2 6.5 2 2 6.5 2 12s4.5 10 10 10c5.8 0 9.6-4.1 9.6-9.9 0-.7-.1-1.2-.2-1.9H12z"/>
+          <path fill="#34A853" d="M2 12c0 5.5 4.5 10 10 10 5 0 8.7-3.3 9.6-7.9h-4c-.7 2.2-2.8 3.9-5.6 3.9-3.3 0-6-2.8-6-6.1H2z"/>
+          <path fill="#4A90E2" d="M4.3 7.3l3.2 2.3C8.4 7.2 10 5.9 12 5.9c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3 14.7 2 12 2 8.2 2 4.9 4.1 3.2 7.2l1.1.1z"/>
+          <path fill="#FBBC05" d="M2 12c0-1.6.4-3.1 1.2-4.4l4.3 3.1c-.2.4-.3.8-.3 1.3 0 .4.1.9.3 1.3l-4.3 3.1A9.9 9.9 0 0 1 2 12z"/>
+        </svg>
+        <span>使用 Google 登入</span>
+      </button>
       <div class="login-close" onclick="closeLogin()">稍後再說</div>
     </div>
   </div>
@@ -391,6 +510,13 @@
   <div id="sceneModal" class="scene-modal" onclick="closeSceneModal()">
     <button class="scene-modal-close" onclick="closeSceneModal()">✕</button>
     <img id="sceneModalImage" class="scene-modal-img" alt="場景大圖" onclick="event.stopPropagation()" />
+  </div>
+
+  <div id="storeSceneModal" class="store-scene-modal" onclick="closeStoreSceneModal()">
+    <div id="storeSceneModalBox" class="store-scene-modal-box" onclick="event.stopPropagation()">
+      <button class="store-scene-modal-close" onclick="closeStoreSceneModal()">✕</button>
+      <div id="storeSceneModalContent"></div>
+    </div>
   </div>
 
   <div id="collectionCreateModal" class="quick-modal" onclick="closeCollectionCreateModal()">
@@ -428,6 +554,15 @@
     </div>
   </div>
 
+  <div id="sideToast" class="side-toast">
+    <div id="sideToastTitle" class="side-toast-title">已加入場景清單</div>
+    <p id="sideToastText" class="side-toast-text">你可以前往我的場景查看與編輯。</p>
+    <div class="side-toast-actions">
+      <button class="side-toast-btn" onclick="hideSideToast()">稍後</button>
+      <button id="sideToastGoBtn" class="side-toast-btn primary" onclick="goCollectionsFromToast()">前往我的場景</button>
+    </div>
+  </div>
+
   <script>
     let slides = document.querySelectorAll('.slide');
     let heroIndex = 0;
@@ -435,6 +570,18 @@
     function nextSlide(){ heroIndex = (heroIndex+1)%slides.length; showSlide(heroIndex); }
     function prevSlide(){ heroIndex = (heroIndex-1+slides.length)%slides.length; showSlide(heroIndex); }
     setInterval(nextSlide, 4000);
+    function scrollStoreScenes(direction){
+      const track = document.getElementById('storeScenesTrack');
+      if(!track) return;
+      const step = Math.round(track.clientWidth * 0.78) * (direction >= 0 ? 1 : -1);
+      track.scrollBy({ left: step, behavior: 'smooth' });
+    }
+    function scrollPromoTrack(trackId, direction){
+      const track = document.getElementById(trackId);
+      if(!track) return;
+      const step = Math.round(track.clientWidth * 0.78) * (direction >= 0 ? 1 : -1);
+      track.scrollBy({ left: step, behavior: 'smooth' });
+    }
 
     const API_PREFIX = '/api/v1';
     const FEED_LIMIT = 20;
@@ -452,6 +599,9 @@
     let collectionListLevel = 'collections';
     let collectionItemsCache = {};
     let productDetailCache = {};
+    let storeScenesData = [];
+    let storeSceneItemsCache = {};
+    let activeStoreSceneItemIndex = 0;
     let drawerCollections = [];
     let drawerCreateOpen = false;
     let drawerCollectionMembership = {};
@@ -459,6 +609,8 @@
     let appDialogResolver = null;
     let sceneMetaSaveTimer = null;
     let sceneMetaEditingCollectionId = null;
+    let sideToastTimer = null;
+    let sideToastTargetCollectionId = null;
 
     function formatPrice(v){ if(v===null||v===undefined||v==='') return '-'; return `$${Number(v).toLocaleString('en-US')}`; }
     function showLoader(){ document.getElementById('spinner').style.display='flex'; document.getElementById('loader').innerHTML=Array(8).fill('<div class="skeleton"></div>').join(''); }
@@ -592,14 +744,45 @@
       return openAppDialog({ title, message, confirmText:'確認', cancelText:'取消', danger:true, showCancel:true });
     }
 
+    function hideSideToast(){
+      const el = document.getElementById('sideToast');
+      if(el) el.classList.remove('open');
+      if(sideToastTimer){
+        clearTimeout(sideToastTimer);
+        sideToastTimer = null;
+      }
+    }
+
+    function goCollectionsFromToast(){
+      hideSideToast();
+      switchView('collections');
+      if(sideToastTargetCollectionId){
+        selectedCollectionDetailId = sideToastTargetCollectionId;
+      }
+      loadCollections();
+    }
+
+    function showSideToast(message, collectionId=null){
+      const el = document.getElementById('sideToast');
+      const text = document.getElementById('sideToastText');
+      if(!el || !text) return;
+      sideToastTargetCollectionId = collectionId;
+      text.textContent = message || '你可以前往我的場景查看與編輯。';
+      el.classList.add('open');
+      if(sideToastTimer) clearTimeout(sideToastTimer);
+      sideToastTimer = setTimeout(() => hideSideToast(), 4200);
+    }
+
     function consumeTokenFromUrl(){
       const url = new URL(window.location.href);
-      const token = url.searchParams.get('token');
+      const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
+      const token = url.searchParams.get('token') || hashParams.get('token');
       if(!token) return;
       authToken = token;
       localStorage.setItem(AUTH_TOKEN_KEY, token);
       url.searchParams.delete('token');
       url.searchParams.delete('provider');
+      url.hash = '';
       window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
     }
 
@@ -657,6 +840,184 @@
       return metaLines.join('\n');
     }
 
+    function renderStoreScenes(items){
+      const track = document.getElementById('storeScenesTrack');
+      if(!track) return;
+      const rows = Array.isArray(items) ? items : [];
+      storeScenesData = rows;
+      if(!rows.length){
+        track.innerHTML = `
+          <div class="store-scene-card">
+            <img src="/static/hero-1.jpg" alt="店家精選場景">
+            <div class="store-scene-meta">
+              <div class="store-scene-title">店家精選場景</div>
+              <div class="store-scene-sub">目前尚無公開店家場景</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      track.innerHTML = rows.map((s) => {
+        const meta = parseSceneMeta(s.description || '');
+        const subtitle = meta.description || (meta.size ? `場景大小 ${meta.size}` : '店家精選搭配');
+        const image = s.cover_image_url || '/static/hero-1.jpg';
+        return `
+          <div class="store-scene-card" onclick="openStoreSceneModal(${s.id})">
+            <img src="${escapeHtml(image)}" alt="${escapeHtml(s.title || '店家場景')}">
+            <div class="store-scene-meta">
+              <div class="store-scene-title">${escapeHtml(s.title || '店家場景')}</div>
+              <div class="store-scene-sub">${escapeHtml(subtitle)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPromoProducts(trackId, items){
+      const track = document.getElementById(trackId);
+      if(!track) return;
+      const rows = Array.isArray(items) ? items.filter(i => i && i.type === 'product') : [];
+      if(!rows.length){
+        track.innerHTML = '<div class="promo-card"><div class="pin-meta"><div class="product-name">目前沒有商品</div></div></div>';
+        return;
+      }
+      track.innerHTML = rows.map((p) => `
+        <div class="promo-card" onclick="openProduct(${p.id})">
+          <img class="product-img" src="${escapeHtml(p.image || '/static/hero-1.jpg')}" alt="${escapeHtml(p.name || 'product')}">
+          <div class="pin-meta">
+            <div class="product-name">${escapeHtml(p.name || '')}</div>
+            <div class="product-price">${formatPrice(p.price)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadStoreScenes(){
+      try{
+        const res = await fetch(`${API_PREFIX}/collections/store/latest?limit=12`);
+        if(!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        renderStoreScenes(data.items || []);
+      }catch{
+        renderStoreScenes([]);
+      }
+    }
+
+    async function loadPromoProducts(){
+      try{
+        const [discountRes, latestRes] = await Promise.all([
+          fetch(`${API_PREFIX}/products/highlights/discount?limit=12`),
+          fetch(`${API_PREFIX}/products/highlights/latest?limit=12`)
+        ]);
+        const discountData = discountRes.ok ? await discountRes.json() : { items: [] };
+        const latestData = latestRes.ok ? await latestRes.json() : { items: [] };
+        renderPromoProducts('discountTrack', discountData.items || []);
+        renderPromoProducts('latestTrack', latestData.items || []);
+      }catch{
+        renderPromoProducts('discountTrack', []);
+        renderPromoProducts('latestTrack', []);
+      }
+    }
+
+    function closeStoreSceneModal(){
+      const modal = document.getElementById('storeSceneModal');
+      const content = document.getElementById('storeSceneModalContent');
+      if(modal) modal.classList.remove('open');
+      if(content) content.innerHTML = '';
+    }
+
+    function renderStoreSceneDetail(items, idx){
+      const detail = document.getElementById('storeSceneDetail');
+      if(!detail) return;
+      const rows = Array.isArray(items) ? items : [];
+      if(!rows.length){
+        detail.innerHTML = '<div class="maps-empty">此場景尚無商品</div>';
+        return;
+      }
+      const safeIndex = Math.max(0, Math.min(idx, rows.length - 1));
+      activeStoreSceneItemIndex = safeIndex;
+      const item = rows[safeIndex];
+      const product = productDetailCache[item.product_id] || null;
+      const variant = resolveItemVariant(item, product);
+      const image = (variant && variant.image_url) || (product && product.cover_image_url) || '/static/hero-1.jpg';
+      const sku = variant ? (variant.variant_code || `SKU-${variant.id}`) : 'SKU未指定';
+      const price = formatPrice(getItemResolvedPrice(item, product));
+      detail.innerHTML = `
+        <img src="${escapeHtml(image)}" alt="${escapeHtml(product ? (product.name || 'product') : 'product')}">
+        <h4>${escapeHtml(product ? (product.name || `商品 #${item.product_id}`) : `商品 #${item.product_id}`)}</h4>
+        <div class="meta">${escapeHtml(sku)}</div>
+        <div class="price">${price}</div>
+        <div class="desc">${escapeHtml((product && product.description) ? product.description : '暫無商品描述')}</div>
+      `;
+      const list = document.getElementById('storeSceneItemsList');
+      if(list){
+        [...list.querySelectorAll('.store-scene-item')].forEach((el, index) => {
+          el.classList.toggle('active', index === safeIndex);
+        });
+      }
+    }
+
+    function selectStoreSceneItem(index){
+      const modal = document.getElementById('storeSceneModal');
+      if(!modal) return;
+      const cid = Number(modal.getAttribute('data-scene-id') || 0);
+      const rows = storeSceneItemsCache[cid] || [];
+      renderStoreSceneDetail(rows, index);
+    }
+
+    async function openStoreSceneModal(collectionId){
+      const modal = document.getElementById('storeSceneModal');
+      const content = document.getElementById('storeSceneModalContent');
+      if(!modal || !content) return;
+      modal.setAttribute('data-scene-id', String(collectionId));
+      modal.classList.add('open');
+      content.innerHTML = '<div class=\"maps-empty\">載入場景商品中...</div>';
+      const scene = storeScenesData.find(s => s.id === collectionId) || null;
+      try{
+        const res = await fetch(`${API_PREFIX}/collections/${collectionId}/items`);
+        if(!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        const items = data.items || [];
+        storeSceneItemsCache[collectionId] = items;
+        const needIds = [...new Set((items || []).map(i => i.product_id).filter(pid => pid && !productDetailCache[pid]))];
+        if(needIds.length){
+          await Promise.all(needIds.map(async (id) => { try { await fetchProductDetail(id); } catch {} }));
+        }
+        const rowsHtml = (items || []).map((i, index) => {
+          const p = productDetailCache[i.product_id] || null;
+          const v = resolveItemVariant(i, p);
+          return `
+            <div class=\"store-scene-item\" onclick=\"selectStoreSceneItem(${index})\">
+              <div class=\"store-scene-item-name\">${escapeHtml((p && p.name) ? p.name : `商品 #${i.product_id}`)}</div>
+              <div class=\"store-scene-item-sub\">${escapeHtml(v ? (v.variant_code || `SKU-${v.id}`) : 'SKU未指定')} ・ ${formatPrice(getItemResolvedPrice(i, p))}</div>
+            </div>
+          `;
+        }).join('');
+        const meta = parseSceneMeta(scene ? (scene.description || '') : '');
+        const cover = scene && scene.cover_image_url ? scene.cover_image_url : '/static/hero-1.jpg';
+        content.innerHTML = `
+          <h3 style=\"margin:0 0 10px;\">${escapeHtml(scene ? (scene.title || '店家精選場景') : '店家精選場景')}</h3>
+          <div style=\"display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:start;margin-bottom:12px;\">
+            <img class=\"store-scene-cover\" style=\"height:140px;\" src=\"${escapeHtml(cover)}\" alt=\"場景封面\">
+            <div style=\"font-size:12px;color:#666;line-height:1.6;\">${escapeHtml(meta.description || '店家精選場景')}</div>
+          </div>
+          <div class=\"store-scene-modal-grid\">
+            <div>
+              <div class=\"decision-title\" style=\"margin-bottom:8px;\">場景商品清單</div>
+              <div id=\"storeSceneItemsList\" class=\"store-scene-items\">${rowsHtml || '<div class=\"maps-empty\">此場景尚無商品</div>'}</div>
+            </div>
+            <div>
+              <div class=\"decision-title\" style=\"margin-bottom:8px;\">商品資訊</div>
+              <div id=\"storeSceneDetail\" class=\"store-scene-detail\"></div>
+            </div>
+          </div>
+        `;
+        renderStoreSceneDetail(items || [], 0);
+      }catch{
+        content.innerHTML = '<div class=\"maps-empty\">載入失敗，請稍後再試</div>';
+      }
+    }
+
     async function fetchProductDetail(productId){
       if(productDetailCache[productId]) return productDetailCache[productId];
       const res = await fetch(`${API_PREFIX}/products/${productId}`);
@@ -675,6 +1036,80 @@
       }));
     }
 
+    function getItemResolvedPrice(item, product){
+      if(!item || !product) return 0;
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      if(item.variant_id){
+        const v = variants.find(x => x.id === item.variant_id);
+        if(v && Number.isFinite(Number(v.price))) return Number(v.price);
+      }
+      const prices = variants.map(v => Number(v.price)).filter(n => Number.isFinite(n));
+      return prices.length ? Math.min(...prices) : 0;
+    }
+
+    function resolveItemVariant(item, product){
+      if(!item || !product) return null;
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      if(item.variant_id){
+        return variants.find(v => v.id === item.variant_id) || null;
+      }
+      return variants[0] || null;
+    }
+
+    function getCategoryToken(product){
+      const text = `${product?.category || ''} ${product?.name || ''}`.toLowerCase();
+      if(text.includes('sofa') || text.includes('沙發')) return 'sofa';
+      if(text.includes('bed') || text.includes('床')) return 'bed';
+      if(text.includes('table') || text.includes('桌')) return 'table';
+      if(text.includes('light') || text.includes('燈')) return 'light';
+      if(text.includes('cabinet') || text.includes('storage') || text.includes('櫃') || text.includes('收納')) return 'storage';
+      return 'other';
+    }
+
+    function buildSceneInsights(collection, rows){
+      const sceneMeta = parseSceneMeta(collection?.description || '');
+      const budget = Number(normalizeDigitsOnly(sceneMeta.budget || '')) || 0;
+      const details = (rows || []).map(r => ({ item: r, product: productDetailCache[r.product_id] || null }));
+      const total = details.reduce((sum, d) => sum + getItemResolvedPrice(d.item, d.product), 0);
+      const budgetUsage = budget > 0 ? Math.round((total / budget) * 100) : 0;
+      const tokens = details.map(d => getCategoryToken(d.product));
+      const needed = [
+        { key:'sofa', label:'沙發' },
+        { key:'table', label:'桌几' },
+        { key:'light', label:'照明' },
+        { key:'storage', label:'收納' }
+      ];
+      const missing = needed.filter(n => !tokens.includes(n.key)).map(n => n.label);
+      const progress = Math.round(((needed.length - missing.length) / needed.length) * 100);
+      return { budget, total, budgetUsage, missing, progress, itemCount: rows.length };
+    }
+
+    async function generateStoreChecklist(collectionId){
+      const collection = collectionsData.find(c => c.id === collectionId);
+      if(!collection) return;
+      if(!collectionItemsCache[collectionId]) await loadCollectionItems(collectionId);
+      const rows = collectionItemsCache[collectionId] || [];
+      await hydrateCollectionProducts(collectionId);
+      const insights = buildSceneInsights(collection, rows);
+      const lines = rows.map((r, idx) => {
+        const p = productDetailCache[r.product_id];
+        const variant = resolveItemVariant(r, p);
+        const skuText = variant ? (variant.variant_code || `SKU-${variant.id}`) : 'SKU未指定';
+        const price = formatPrice(getItemResolvedPrice(r, p));
+        return `${idx + 1}. ${(p && p.name) ? p.name : `商品 #${r.product_id}`} / ${skuText} (${price})`;
+      });
+      const text = [
+        `場景：${collection.title || '-'}`,
+        `商品數：${rows.length}`,
+        `預估總價：${formatPrice(insights.total)}`,
+        insights.budget ? `場景預算：${formatPrice(insights.budget)}` : '場景預算：未設定',
+        '',
+        '到店查看清單：',
+        ...(lines.length ? lines : ['尚無商品'])
+      ].join('\n');
+      await uiAlert(text, '到店清單');
+    }
+
     function renderCollectionPreview(collection, items){
       const preview = document.getElementById('collectionPreview');
       if(!collection){
@@ -687,11 +1122,45 @@
       }
 
       const rows = items || [];
+      const insights = buildSceneInsights(collection, rows);
+      const overBudget = insights.budget > 0 && insights.total > insights.budget;
+      const panelHtml = `
+        <div class="decision-panel">
+          <div class="decision-title">場景決策面板</div>
+          <div class="decision-stats">
+            <div class="decision-stat">
+              <div class="decision-k">商品數</div>
+              <div class="decision-v">${insights.itemCount}</div>
+            </div>
+            <div class="decision-stat">
+              <div class="decision-k">預估總價</div>
+              <div class="decision-v ${overBudget ? 'warn' : ''}">${formatPrice(insights.total)}</div>
+            </div>
+            <div class="decision-stat">
+              <div class="decision-k">預算使用</div>
+              <div class="decision-v ${overBudget ? 'warn' : ''}">${insights.budget ? `${insights.budgetUsage}%` : '-'}</div>
+            </div>
+          </div>
+          <div class="decision-progress">
+            <div class="decision-progress-track">
+              <div class="decision-progress-fill" style="width:${Math.max(0, Math.min(insights.progress, 100))}%"></div>
+            </div>
+            <div class="decision-line">必要品完成度 ${insights.progress}%（沙發 / 桌几 / 照明 / 收納）</div>
+          </div>
+          <div class="decision-line">缺件提醒</div>
+          <div class="missing-list">${insights.missing.length ? insights.missing.map(x => `<span class="missing-chip">${escapeHtml(x)}</span>`).join('') : '<span class="missing-chip">已補齊</span>'}</div>
+          <div class="panel-row">
+            <button class="btn-small" onclick="generateStoreChecklist(${collection.id})">產生到店清單</button>
+            <button class="btn-small" onclick="switchView('feed')">去精選商品挑選</button>
+          </div>
+        </div>
+      `;
       const selectedItem = rows.find(i => i.id === selectedCollectionItemId) || null;
       const product = selectedItem ? productDetailCache[selectedItem.product_id] : null;
 
       if(!rows.length){
         preview.innerHTML = `
+          ${panelHtml}
           <h3>${escapeHtml(collection.title || '')}</h3>
           <div class="maps-empty">尚無商品</div>
         `;
@@ -699,39 +1168,35 @@
       }
 
       if(!selectedItem){
-        preview.innerHTML = '<div class="maps-empty">請從左側選擇商品。</div>';
+        preview.innerHTML = `${panelHtml}<div class="maps-empty">請從左側選擇商品。</div>`;
         return;
       }
 
       if(!product){
-        preview.innerHTML = '<div class="maps-empty">商品資訊載入中...</div>';
+        preview.innerHTML = `${panelHtml}<div class="maps-empty">商品資訊載入中...</div>`;
         return;
       }
 
       const variants = Array.isArray(product.variants) ? product.variants : [];
+      const selectedVariant = resolveItemVariant(selectedItem, product);
       const prices = variants.map(v => Number(v.price || 0)).filter(v => !Number.isNaN(v));
       const priceText = prices.length
         ? (Math.min(...prices) === Math.max(...prices) ? formatPrice(Math.min(...prices)) : `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`)
         : '-';
-      const variantRows = variants.slice(0, 6).map(v => `
-        <div class="panel-card" style="padding:8px 10px;">
-          <div style="font-size:12px;font-weight:600;">${escapeHtml(v.variant_code || `SKU-${v.id}`)}</div>
-          <div style="font-size:12px;color:#6f665c;">庫存 ${Number(v.stock || 0)} / ${formatPrice(v.price)}</div>
-        </div>
-      `).join('');
-
       preview.innerHTML = `
+        ${panelHtml}
         <img src="${escapeHtml(product.cover_image_url || '')}" alt="${escapeHtml(product.name || '')}">
         <h3>${escapeHtml(product.name || '')}</h3>
         <div style="font-size:13px;color:#6e665d;">${escapeHtml(product.brand || '品牌未設定')} ・ ${escapeHtml(product.category || '分類未設定')}</div>
+        <div class="panel-card" style="padding:10px 12px; margin-top:10px;">
+          <div style="font-size:12px;color:#6f665c;">已選 SKU</div>
+          <div style="margin-top:4px;font-size:13px;font-weight:700;">${selectedVariant ? escapeHtml(selectedVariant.variant_code || `SKU-${selectedVariant.id}`) : 'SKU 未指定'}</div>
+          <div style="margin-top:3px;font-size:12px;color:#6f665c;">庫存 ${selectedVariant ? Number(selectedVariant.stock || 0) : '-'} / ${selectedVariant ? formatPrice(selectedVariant.price) : '-'}</div>
+        </div>
         <div style="margin-top:10px;font-size:14px;"><strong>價格：</strong>${priceText}</div>
         <p style="margin-top:10px;color:#544d45;line-height:1.55;">${escapeHtml(product.description || '暫無描述')}</p>
         <div class="panel-row">
           <button class="btn-danger" onclick="removeCollectionItem(${collection.id}, ${selectedItem.id})">移除此商品</button>
-        </div>
-        <h4 style="margin:14px 0 8px;">SKU</h4>
-        <div class="simple-grid">
-          ${variantRows || '<div class="maps-empty">無 SKU 資訊。</div>'}
         </div>
       `;
     }
@@ -934,8 +1399,11 @@
       `;
       const rowsHtml = items.map(i => {
         const p = productDetailCache[i.product_id];
-        const title = p ? (p.name || `Product #${i.product_id}`) : `Product #${i.product_id}`;
-        const sub = p ? `${p.brand || '品牌未設定'} ・ ${p.category || '分類未設定'}` : '載入中...';
+        const v = resolveItemVariant(i, p);
+        const title = p ? (p.name || `商品 #${i.product_id}`) : `商品 #${i.product_id}`;
+        const sub = p
+          ? `${v ? (v.variant_code || `SKU-${v.id}`) : 'SKU未指定'} ・ 庫存 ${v ? Number(v.stock || 0) : '-'} ・ ${formatPrice(getItemResolvedPrice(i, p))}`
+          : '載入中...';
         const activeCls = i.id === selectedCollectionItemId ? ' active' : '';
         return `
           <div class="scene-product-row${activeCls}" onclick="selectCollectionItem(${i.id})">
@@ -1077,6 +1545,8 @@
           });
           const data = await res.json();
           drawerCollectionMembership[collectionId] = { included: true, itemId: data.item_id || null };
+          const c = drawerCollections.find(x => x.id === collectionId);
+          showSideToast(`已加入「${(c && c.title) ? c.title : '場景清單'}」，可前往我的場景查看。`, collectionId);
         }
         if(activeView === 'collections'){
           delete collectionItemsCache[collectionId];
@@ -1243,16 +1713,13 @@
       toggleDrawerCreateRow(false);
       await loadDrawerCollections();
       await loadCollections();
+      showSideToast('場景清單已建立，前往我的場景可繼續編輯。', createdData.id);
     }
 
     function buildSceneImages(product){
       const urls=[];
       if(product.cover_image_url) urls.push(product.cover_image_url);
       if(Array.isArray(product.images)) product.images.forEach(img=>{ if(img&&img.image_url) urls.push(img.image_url); });
-      if(urls.length<4){
-        const seed = encodeURIComponent(product.product_code || product.id || 'furni');
-        urls.push(`https://picsum.photos/seed/${seed}-scene-1/600/600`,`https://picsum.photos/seed/${seed}-scene-2/600/600`,`https://picsum.photos/seed/${seed}-scene-3/600/600`);
-      }
       const uniq=[]; urls.forEach(u=>{ if(u && !uniq.includes(u)) uniq.push(u); });
       return uniq.slice(0,6);
     }
@@ -1288,7 +1755,12 @@
 
     function renderScenes(product){
       const grid=document.getElementById('drawerSceneGrid'); grid.innerHTML='';
-      buildSceneImages(product).forEach(url=>{ const img=document.createElement('img'); img.className='scene-thumb'; img.src=url; img.alt='scene'; img.onclick=(e)=>{ e.stopPropagation(); openSceneModal(url); }; grid.appendChild(img); });
+      const sceneImages = buildSceneImages(product);
+      if(!sceneImages.length){
+        grid.innerHTML = '<div class="maps-empty">尚無場景照片</div>';
+        return;
+      }
+      sceneImages.forEach(url=>{ const img=document.createElement('img'); img.className='scene-thumb'; img.src=url; img.alt='scene'; img.onclick=(e)=>{ e.stopPropagation(); openSceneModal(url); }; grid.appendChild(img); });
     }
 
     function fillDrawerBase(product){
@@ -1326,19 +1798,6 @@
 
     function startOAuth(provider){ window.location.href = `${API_PREFIX}/auth/${provider}/start`; }
 
-    async function loginWithProfile(){
-      const displayName=(document.getElementById('loginDisplayName').value||'').trim();
-      const email=(document.getElementById('loginEmail').value||'').trim();
-      if(!displayName){ await uiAlert('請先輸入名稱'); return; }
-      const res = await fetch(`${API_PREFIX}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: displayName, email: email || null }) });
-      if(!res.ok){ await uiAlert('登入失敗，請稍後再試'); return; }
-      const data=await res.json();
-      authToken=data.token; localStorage.setItem(AUTH_TOKEN_KEY, authToken); currentUser=data; userLoggedIn=true; loginPromptShown=false; refreshUserBar(); closeLogin();
-      if(activeView==='collections') loadCollections();
-      loadDrawerCollections();
-      await uiAlert(`已登入：${data.display_name}`, '登入成功');
-    }
-
     async function logout(){
       try{ await apiFetch(`${API_PREFIX}/auth/logout`, { method:'POST' }); }catch{}
       authToken=''; localStorage.removeItem(AUTH_TOKEN_KEY); currentUser=null; userLoggedIn=false; loginPromptShown=false; refreshUserBar();
@@ -1352,7 +1811,7 @@
 
     function handleAuthAction(){ if(userLoggedIn) logout(); else showLogin(); }
 
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeSceneModal(); closeDrawer(); closeLogin(); closeCollectionCreateModal(); closeSceneMetaModal(); closeAppDialog(false); } });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeStoreSceneModal(); closeSceneModal(); closeDrawer(); closeLogin(); closeCollectionCreateModal(); closeSceneMetaModal(); closeAppDialog(false); hideSideToast(); } });
     document.addEventListener('click', (e)=>{
       const picker = document.getElementById('drawerCollectionPicker');
       if(picker && !picker.contains(e.target)) toggleDrawerCollectionMenu(false);
@@ -1368,6 +1827,8 @@
 
     (async ()=>{
       consumeTokenFromUrl();
+      await loadStoreScenes();
+      await loadPromoProducts();
       await loadCategories();
       await initAuth();
       await loadFeed();

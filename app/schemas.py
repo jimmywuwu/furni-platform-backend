@@ -23,7 +23,6 @@ class ImageOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
 class ProductDetailOut(BaseModel):
     id: int
     product_code: str
@@ -67,6 +66,7 @@ class CreateCollectionIn(BaseModel):
     title: str
     description: str | None = None
     cover_image_url: str | None = None
+    store_id: int | None = None
     visibility: str = "private"
     is_store_scene: bool = False
 
@@ -75,6 +75,7 @@ class UpdateCollectionIn(BaseModel):
     title: str | None = None
     description: str | None = None
     cover_image_url: str | None = None
+    store_id: int | None = None
     visibility: str | None = None
     is_store_scene: bool | None = None
 
