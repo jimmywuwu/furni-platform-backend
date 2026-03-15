@@ -2,9 +2,10 @@
 
 import re
 import sqlite3
-from pathlib import Path
 
-DB = Path('furni.db')
+from app.paths import DB_PATH
+
+DB = DB_PATH
 
 
 def normalize_prefix(code: str) -> str:

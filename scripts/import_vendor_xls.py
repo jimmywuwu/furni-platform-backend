@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import re
 
@@ -160,16 +161,39 @@ def upsert_products(df: pd.DataFrame) -> tuple[int, int, int]:
     return created_products, created_variants, created_slots
 
 
-def main() -> None:
-    candidates = sorted(Path(r"c:\Users\JIMMY\Downloads").glob("2026.3*.xls"))
-    if not candidates:
-        raise SystemExit("Cannot find target .xls in Downloads")
+def _default_downloads_dir() -> Path:
+    return Path.home() / "Downloads"
 
-    file_path = candidates[0]
+
+def _resolve_input_file(path_arg: str | None, pattern: str) -> Path:
+    if path_arg:
+        path = Path(path_arg).expanduser()
+        if not path.exists():
+            raise SystemExit(f"Input file not found: {path}")
+        return path
+
+    downloads = _default_downloads_dir()
+    candidates = sorted(downloads.glob(pattern))
+    if not candidates:
+        raise SystemExit(f"Cannot find target .xls in {downloads} with pattern {pattern!r}")
+    return candidates[0]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Import vendor XLS data into furni.db")
+    parser.add_argument("--file", help="Path to the vendor .xls file")
+    parser.add_argument(
+        "--pattern",
+        default="2026.3*.xls",
+        help="Filename glob used under ~/Downloads when --file is not provided",
+    )
+    args = parser.parse_args()
+
+    file_path = _resolve_input_file(args.file, args.pattern)
     df = load_vendor_xls(file_path)
     cp, cv, cs = upsert_products(df)
     print(
-        f"imported_rows={len(df)} created_products={cp} created_variants={cv} created_feed_slots={cs}"
+        f"file={file_path} imported_rows={len(df)} created_products={cp} created_variants={cv} created_feed_slots={cs}"
     )
 
 

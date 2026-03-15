@@ -54,7 +54,10 @@ from .schemas import (
     VariantOut,
 )
 from .migrations import run_schema_migrations
+from .paths import ASSETS_DIR, STATIC_DIR, ensure_runtime_dirs
 from .seed import seed_data
+
+ensure_runtime_dirs()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -73,8 +76,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 def _get_or_create_wishlist(db: Session, user_id: int) -> Wishlist:

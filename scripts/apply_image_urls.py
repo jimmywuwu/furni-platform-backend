@@ -1,8 +1,10 @@
 ﻿from pathlib import Path
 import sqlite3
 
-DB = Path('furni.db')
-IMG_DIR = Path('assets/product-images')
+from app.paths import ASSETS_DIR, DB_PATH
+
+DB = DB_PATH
+IMG_DIR = ASSETS_DIR / 'product-images'
 
 conn = sqlite3.connect(DB)
 cur = conn.cursor()

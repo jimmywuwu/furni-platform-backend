@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import argparse
 import shutil
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import engine
 from app.models import Product
+from app.paths import PROJECT_ROOT, STATIC_DIR
 
 
 def read_sheet1_item_codes(xls_path: Path) -> list[str]:
@@ -28,22 +30,57 @@ def read_sheet1_item_codes(xls_path: Path) -> list[str]:
     return [c for c in codes if c]
 
 
-def main() -> None:
-    downloads = Path(r"c:\Users\JIMMY\Downloads")
-    xls_candidates = [p for p in downloads.glob("2026.3*.xls") if "(1)" in p.name]
-    if not xls_candidates:
-        raise SystemExit("Cannot find xls file containing '(1)' in Downloads")
-    xls_path = xls_candidates[0]
+def _default_downloads_dir() -> Path:
+    return Path.home() / "Downloads"
 
-    source_dir = Path("extracted_images_sheet1")
+
+def _resolve_xls_path(path_arg: str | None, pattern: str) -> Path:
+    if path_arg:
+        path = Path(path_arg).expanduser()
+        if not path.exists():
+            raise SystemExit(f"Input file not found: {path}")
+        return path
+
+    downloads = _default_downloads_dir()
+    xls_candidates = [p for p in downloads.glob(pattern) if "(1)" in p.name]
+    if not xls_candidates:
+        raise SystemExit(
+            f"Cannot find xls file containing '(1)' in {downloads} with pattern {pattern!r}"
+        )
+    return xls_candidates[0]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Map extracted Sheet1 images into product records")
+    parser.add_argument("--file", help="Path to the source .xls file")
+    parser.add_argument(
+        "--pattern",
+        default="2026.3*.xls",
+        help="Filename glob used under ~/Downloads when --file is not provided",
+    )
+    parser.add_argument(
+        "--source-dir",
+        default=str(PROJECT_ROOT / "extracted_images_sheet1"),
+        help="Directory containing extracted images",
+    )
+    parser.add_argument(
+        "--target-dir",
+        default=str(STATIC_DIR / "product_images"),
+        help="Output directory for mapped product images",
+    )
+    args = parser.parse_args()
+
+    xls_path = _resolve_xls_path(args.file, args.pattern)
+
+    source_dir = Path(args.source_dir).expanduser()
     if not source_dir.exists():
-        raise SystemExit("Missing extracted_images_sheet1 folder")
+        raise SystemExit(f"Missing source image folder: {source_dir}")
 
     image_files = sorted(source_dir.glob("img_*.*"))
     if not image_files:
         raise SystemExit("No extracted images found")
 
-    target_dir = Path("static/product_images")
+    target_dir = Path(args.target_dir).expanduser()
     target_dir.mkdir(parents=True, exist_ok=True)
 
     item_codes = read_sheet1_item_codes(xls_path)

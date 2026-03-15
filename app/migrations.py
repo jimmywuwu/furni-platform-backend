@@ -282,8 +282,8 @@ def run_schema_migrations(session: Session) -> None:
         conn.execute(
             text(
                 """
-                INSERT INTO categories (slug, name_zh, level, sort_order, is_active)
-                SELECT :slug, :name_zh, 1, 0, 1
+                INSERT INTO categories (slug, name_zh, level, sort_order, is_active, created_at)
+                SELECT :slug, :name_zh, 1, 0, 1, CURRENT_TIMESTAMP
                 WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = :slug)
                 """
             ),
@@ -305,8 +305,8 @@ def run_schema_migrations(session: Session) -> None:
             conn.execute(
                 text(
                     """
-                    INSERT INTO categories (slug, name_zh, level, sort_order, is_active)
-                    VALUES (:slug, :name_zh, 1, 0, 1)
+                    INSERT INTO categories (slug, name_zh, level, sort_order, is_active, created_at)
+                    VALUES (:slug, :name_zh, 1, 0, 1, CURRENT_TIMESTAMP)
                     """
                 ),
                 {"slug": slug, "name_zh": slug},

@@ -1,7 +1,11 @@
 ﻿from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = "sqlite:///./furni.db"
+from .paths import DB_PATH, ensure_runtime_dirs
+
+ensure_runtime_dirs()
+
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(
     DATABASE_URL,
