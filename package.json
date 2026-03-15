@@ -1,0 +1,25 @@
+{
+  "name": "furni-platform-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "XDG_CONFIG_HOME=./.run/config wrangler dev --local --port 8000",
+    "dev:preview": "XDG_CONFIG_HOME=./.run/config wrangler dev --local --env preview --port 8000",
+    "dev:production": "XDG_CONFIG_HOME=./.run/config wrangler dev --local --env production --port 8000",
+    "typecheck": "tsc --noEmit",
+    "db:schema:local": "XDG_CONFIG_HOME=./.run/config wrangler d1 execute furni-platform --local --file=./deploy/cloudflare/schema.sql",
+    "db:seed:local": "XDG_CONFIG_HOME=./.run/config wrangler d1 execute furni-platform --local --file=./deploy/cloudflare/seed.sql",
+    "db:reset:local": "npm run db:schema:local && npm run db:seed:local",
+    "test": "bash ./scripts/test_smoke.sh",
+    "deploy:preview": "wrangler deploy --env preview",
+    "deploy:production": "wrangler deploy --env production"
+  },
+  "dependencies": {
+    "hono": "^4.7.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "wrangler": "3.114.0"
+  }
+}
