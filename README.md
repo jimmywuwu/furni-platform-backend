@@ -5,16 +5,15 @@
 ## 1) 安裝
 
 ```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
 ## 2) 啟動
 
 ```bash
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
 ```
 
 啟動後：
@@ -100,13 +99,13 @@ ngrok config add-authtoken YOUR_NGROK_AUTHTOKEN
 3. 啟動後端：
 
 ```bash
-start_server.bat
+./start_server.sh
 ```
 
 4. 啟動 tunnel：
 
 ```bash
-start_ngrok.bat
+./start_ngrok.sh
 ```
 
 5. 取得 ngrok 公開網址，例如：
@@ -131,8 +130,40 @@ GOOGLE_REDIRECT_URI=https://abc123.ngrok-free.app/api/v1/auth/google/callback
 
 - 使用 SQLite (`furni.db`)
 - 啟動時會建立 schema migration 與 seed data
+- Linux 部署可用以下環境變數調整 runtime 路徑：
 
-## 7) 前端串接
+```bash
+export FURNI_DATA_DIR=/opt/furni-platform
+# 或分別指定
+export FURNI_DB_PATH=/opt/furni-platform/furni.db
+export FURNI_ASSETS_DIR=/opt/furni-platform/assets
+export FURNI_STATIC_DIR=/opt/furni-platform/static
+```
+
+- `start_server.sh` 支援：
+
+```bash
+HOST=0.0.0.0 PORT=8000 RELOAD=0 ./start_server.sh
+```
+
+## 7) Linux 匯入腳本
+
+匯入腳本已改成 Linux 可用，預設會從 `~/Downloads` 找檔案，也可以明確指定：
+
+```bash
+python3 scripts/import_vendor_xls.py --file ~/Downloads/2026.3-example.xls
+python3 scripts/map_sheet1_images.py --file ~/Downloads/2026.3-example\(1\).xls
+```
+
+Excel 內嵌圖片抽取原本是 PowerShell + Excel COM，僅能在 Windows 執行。Linux 請改用：
+
+```bash
+python3 scripts/extract_excel_images.py --excel ~/Downloads/2026.3-example.xls --output extracted_images_sheet1
+```
+
+此腳本需系統已安裝 `libreoffice`，會先把 `.xls` 轉成 `.xlsx` 再讀取圖片錨點。
+
+## 8) 前端串接
 
 ```js
 const res = await fetch(`/api/v1/feed?cursor=${cursor}&limit=${limit}`)

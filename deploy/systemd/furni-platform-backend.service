@@ -1,0 +1,16 @@
+[Unit]
+Description=Furni Platform Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jimmywu0621/furni-platform-backend
+Environment=HOST=0.0.0.0
+Environment=PORT=8000
+Environment=RELOAD=0
+ExecStart=/home/jimmywu0621/furni-platform-backend/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
