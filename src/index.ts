@@ -3,14 +3,17 @@ import { cors } from "hono/cors";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import { createAppContext } from "./app-context";
+import type { AdminVariantInput } from "./domain/ports";
 
 type Bindings = {
   ASSETS?: Fetcher;
   DB: D1Database;
+  PRODUCT_IMAGES?: R2Bucket;
   AUTH_PROVIDERS?: string;
   LOCAL_AUTH_MODE?: string;
   PREVIEW_ADMIN_DISPLAY_NAME?: string;
   PREVIEW_ADMIN_EMAIL?: string;
+  PRODUCT_IMAGE_BASE_URL?: string;
   LINE_CLIENT_ID?: string;
   LINE_CLIENT_SECRET?: string;
   LINE_REDIRECT_URI?: string;
@@ -22,6 +25,9 @@ type Bindings = {
 type AppContext = Context<{ Bindings: Bindings }>;
 
 const app = new Hono<{ Bindings: Bindings }>();
+const ALLOWED_UPLOAD_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_UPLOAD_FILES = 10;
 
 app.use("*", cors({ origin: "*", allowHeaders: ["*"], allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"] }));
 
@@ -43,12 +49,24 @@ function services(c: AppContext) {
   return createAppContext(c.env.DB).services;
 }
 
+function repositories(c: AppContext) {
+  return createAppContext(c.env.DB).repositories;
+}
+
 function normalizeString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
   }
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+function normalizeProductStatus(value: unknown): "draft" | "published" | "archived" {
+  const status = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (status === "published" || status === "archived") {
+    return status;
+  }
+  return "draft";
 }
 
 function normalizeVisibility(value: unknown): string {
@@ -94,6 +112,33 @@ function enabledAuthProviders(c: AppContext): string[] {
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function canManageProducts(session: { role?: string | null } | null): boolean {
+  if (!session) {
+    return false;
+  }
+  const role = typeof session.role === "string" ? session.role.trim().toLowerCase() : "";
+  return role === "admin" || role === "staff";
+}
+
+async function requireManager(c: AppContext) {
+  const token = bearerToken(c.req.header("authorization"));
+  if (!token) {
+    return { error: jsonError(401, "Missing bearer token") };
+  }
+  const session = await services(c).auth.getSession(token);
+  if (!session) {
+    return { error: jsonError(401, "Invalid session") };
+  }
+  const user = await repositories(c).users.getById(session.userId);
+  if (!user) {
+    return { error: jsonError(404, "User not found") };
+  }
+  if (!canManageProducts({ role: user.role })) {
+    return { error: jsonError(403, "Product management permission denied") };
+  }
+  return { session, user };
 }
 
 function isProviderEnabled(c: AppContext, provider: "local" | "line" | "google"): boolean {
@@ -174,7 +219,109 @@ async function getJson(url: string, headers?: Record<string, string>) {
   return (parsed as Record<string, unknown>) ?? {};
 }
 
+function inferExtension(contentType: string | null, fileName: string | null) {
+  const byName = fileName?.split(".").pop()?.trim().toLowerCase();
+  if (byName && /^[a-z0-9]+$/.test(byName)) {
+    return byName;
+  }
+  switch ((contentType ?? "").toLowerCase()) {
+    case "image/jpeg":
+      return "jpg";
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "image/gif":
+      return "gif";
+    default:
+      return "bin";
+  }
+}
+
+function decodeDataUrl(dataUrl: string) {
+  const match = dataUrl.match(/^data:([^;,]+)?(?:;base64)?,([\s\S]+)$/);
+  if (!match) {
+    throw new Error("Invalid data_url");
+  }
+  const mimeType = match[1] ?? "application/octet-stream";
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return { mimeType, bytes };
+}
+
+function validateUpload(contentType: string, bytes: Uint8Array) {
+  if (!ALLOWED_UPLOAD_CONTENT_TYPES.has(contentType.toLowerCase())) {
+    throw new Error("Unsupported image type");
+  }
+  if (bytes.byteLength > MAX_UPLOAD_FILE_BYTES) {
+    throw new Error("Image exceeds 5MB limit");
+  }
+}
+
+function parseAdminVariants(value: unknown): AdminVariantInput[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map<AdminVariantInput | null>((item) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+      const record = item as Record<string, unknown>;
+      const price = Number(record.price ?? 0);
+      const stock = Number(record.stock ?? 0);
+      const widthCm = record.width_cm == null || record.width_cm === "" ? null : Number(record.width_cm);
+      const depthCm = record.depth_cm == null || record.depth_cm === "" ? null : Number(record.depth_cm);
+      const heightCm = record.height_cm == null || record.height_cm === "" ? null : Number(record.height_cm);
+      if (
+        !Number.isFinite(price)
+        || !Number.isFinite(stock)
+        || (widthCm !== null && !Number.isFinite(widthCm))
+        || (depthCm !== null && !Number.isFinite(depthCm))
+        || (heightCm !== null && !Number.isFinite(heightCm))
+      ) {
+        return null;
+      }
+      return {
+        id: typeof record.id === "number" && Number.isFinite(record.id) ? record.id : undefined,
+        variantCode: record.variant_code === undefined ? undefined : normalizeString(record.variant_code),
+        color: record.color === undefined ? undefined : normalizeString(record.color),
+        sizeLabel: record.size_label === undefined ? undefined : normalizeString(record.size_label),
+        material: record.material === undefined ? undefined : normalizeString(record.material),
+        price: Math.max(0, price),
+        stock: Math.max(0, stock),
+        widthCm,
+        depthCm,
+        heightCm,
+      };
+    })
+    .filter((item): item is AdminVariantInput => item !== null);
+}
+
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+app.get("/admin", async (c) => {
+  if (!c.env.ASSETS) {
+    return jsonError(404, "Not Found");
+  }
+  const url = new URL(c.req.url);
+  url.pathname = "/admin.html";
+  url.search = "";
+  return c.env.ASSETS.fetch(new Request(url.toString(), c.req.raw));
+});
+
+app.get("/admin/", async (c) => {
+  if (!c.env.ASSETS) {
+    return jsonError(404, "Not Found");
+  }
+  const url = new URL(c.req.url);
+  url.pathname = "/admin.html";
+  url.search = "";
+  return c.env.ASSETS.fetch(new Request(url.toString(), c.req.raw));
+});
 
 app.get("/api/v1/feed", async (c) => {
   const cursor = queryInt(c, "cursor", 0);
@@ -210,18 +357,22 @@ app.get("/api/v1/products/:productId", async (c) => {
     return jsonError(400, "Invalid product id");
   }
   const product = await services(c).catalog.getProductById(productId);
-  if (!product) {
+  if (!product || product.status !== "published") {
     return jsonError(404, "Product not found");
   }
   return c.json({
     id: product.id,
     product_code: product.productCode,
     name: product.name,
+    status: product.status,
     brand: product.brand,
     category: product.category,
     category_slug: product.categorySlug,
     description: product.description,
     cover_image_url: product.coverImageUrl,
+    width_cm: product.widthCm ?? null,
+    depth_cm: product.depthCm ?? null,
+    height_cm: product.heightCm ?? null,
     variants: product.variants.map((variant) => ({
       id: variant.id,
       variant_code: variant.variantCode,
@@ -230,9 +381,13 @@ app.get("/api/v1/products/:productId", async (c) => {
       material: variant.material,
       price: variant.price,
       stock: variant.stock,
+      width_cm: variant.widthCm ?? null,
+      depth_cm: variant.depthCm ?? null,
+      height_cm: variant.heightCm ?? null,
     })),
     images: product.images.map((image) => ({
       id: image.id,
+      variant_id: image.variantId,
       image_url: image.imageUrl,
       image_type: image.imageType,
       position: image.position,
@@ -246,18 +401,22 @@ app.get("/api/v1/products/:productId/drawer", async (c) => {
     return jsonError(400, "Invalid product id");
   }
   const product = await services(c).catalog.getProductById(productId);
-  if (!product) {
+  if (!product || product.status !== "published") {
     return jsonError(404, "Product not found");
   }
   return c.json({
     id: product.id,
     product_code: product.productCode,
     name: product.name,
+    status: product.status,
     brand: product.brand,
     category: product.category,
     category_slug: product.categorySlug,
     description: product.description,
     cover_image_url: product.coverImageUrl,
+    width_cm: product.widthCm ?? null,
+    depth_cm: product.depthCm ?? null,
+    height_cm: product.heightCm ?? null,
     variants: product.variants.map((variant) => ({
       id: variant.id,
       variant_code: variant.variantCode,
@@ -266,14 +425,283 @@ app.get("/api/v1/products/:productId/drawer", async (c) => {
       material: variant.material,
       price: variant.price,
       stock: variant.stock,
+      width_cm: variant.widthCm ?? null,
+      depth_cm: variant.depthCm ?? null,
+      height_cm: variant.heightCm ?? null,
     })),
     images: product.images.map((image) => ({
       id: image.id,
+      variant_id: image.variantId,
       image_url: image.imageUrl,
       image_type: image.imageType,
       position: image.position,
     })),
   });
+});
+
+app.get("/api/v1/admin/products/:productId", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const productId = Number(c.req.param("productId"));
+  if (!Number.isFinite(productId)) {
+    return jsonError(400, "Invalid product id");
+  }
+  const product = await services(c).catalog.getProductById(productId);
+  if (!product) {
+    return jsonError(404, "Product not found");
+  }
+  return c.json({
+    id: product.id,
+    product_code: product.productCode,
+    name: product.name,
+    status: product.status,
+    brand: product.brand,
+    category: product.category,
+    category_slug: product.categorySlug,
+    description: product.description,
+    cover_image_url: product.coverImageUrl,
+    width_cm: product.widthCm ?? null,
+    depth_cm: product.depthCm ?? null,
+    height_cm: product.heightCm ?? null,
+    variants: product.variants.map((variant) => ({
+      id: variant.id,
+      variant_code: variant.variantCode,
+      color: variant.color,
+      size_label: variant.sizeLabel,
+      material: variant.material,
+      price: variant.price,
+      stock: variant.stock,
+      width_cm: variant.widthCm ?? null,
+      depth_cm: variant.depthCm ?? null,
+      height_cm: variant.heightCm ?? null,
+    })),
+    images: product.images.map((image) => ({
+      id: image.id,
+      variant_id: image.variantId,
+      image_url: image.imageUrl,
+      image_type: image.imageType,
+      position: image.position,
+    })),
+  });
+});
+
+app.get("/api/v1/admin/products", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const items = await services(c).adminProducts.listProducts();
+  return c.json({
+    items: items.map((item) => ({
+      id: item.id,
+      product_code: item.productCode,
+      name: item.name,
+      status: item.status,
+      cover_image_url: item.coverImageUrl,
+      width_cm: item.widthCm,
+      depth_cm: item.depthCm,
+      height_cm: item.heightCm,
+      stock: item.stock,
+      sku_count: item.skuCount,
+      min_price: item.minPrice,
+      primary_variant_id: item.primaryVariantId,
+      created_at: item.createdAt,
+    })),
+  });
+});
+
+app.post("/api/v1/admin/uploads/product-images", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  if (!c.env.PRODUCT_IMAGES) {
+    return jsonError(500, "PRODUCT_IMAGES binding is not configured");
+  }
+  const body = await parseJsonBody<{
+    files?: Array<{ name?: unknown; content_type?: unknown; data_url?: unknown }>;
+  }>(c);
+  const files = Array.isArray(body?.files) ? body.files : [];
+  if (!files.length) {
+    return jsonError(400, "files is required");
+  }
+  if (files.length > MAX_UPLOAD_FILES) {
+    return jsonError(400, `At most ${MAX_UPLOAD_FILES} files can be uploaded at once`);
+  }
+  const baseUrl = (envValue(c, "PRODUCT_IMAGE_BASE_URL") ?? "https://img.davidfield.com.tw").replace(/\/+$/, "");
+  const uploaded: Array<{ key: string; url: string }> = [];
+  for (const file of files) {
+    const dataUrl = normalizeString(file?.data_url);
+    if (!dataUrl) {
+      return jsonError(400, "Each file requires data_url");
+    }
+    const { mimeType, bytes } = decodeDataUrl(dataUrl);
+    const contentType = normalizeString(file?.content_type) ?? mimeType;
+    try {
+      validateUpload(contentType, bytes);
+    } catch (error) {
+      return jsonError(400, error instanceof Error ? error.message : "Invalid upload");
+    }
+    const extension = inferExtension(contentType, normalizeString(file?.name));
+    const key = `products/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+    await c.env.PRODUCT_IMAGES.put(key, bytes, {
+      httpMetadata: { contentType },
+    });
+    uploaded.push({ key, url: `${baseUrl}/${key}` });
+  }
+  return c.json({ items: uploaded });
+});
+
+app.post("/api/v1/admin/products", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const body = await parseJsonBody<{
+    name?: unknown;
+    status?: unknown;
+    description?: unknown;
+    width_cm?: unknown;
+    depth_cm?: unknown;
+    height_cm?: unknown;
+    image_urls?: unknown;
+    variant_images?: unknown;
+    variants?: unknown;
+  }>(c);
+  const name = normalizeString(body?.name);
+  if (!name) {
+    return jsonError(400, "name is required");
+  }
+  try {
+    return c.json(await services(c).adminProducts.createProduct({
+      name,
+      status: normalizeProductStatus(body?.status),
+      description: typeof body?.description === "string" ? body.description : null,
+      widthCm: body?.width_cm == null || body.width_cm === "" ? null : Number(body.width_cm),
+      depthCm: body?.depth_cm == null || body.depth_cm === "" ? null : Number(body.depth_cm),
+      heightCm: body?.height_cm == null || body.height_cm === "" ? null : Number(body.height_cm),
+      imageUrls: Array.isArray(body?.image_urls)
+        ? body.image_urls.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        : [],
+      variantImages: Array.isArray(body?.variant_images)
+        ? body.variant_images
+            .map((entry) => {
+              const record = typeof entry === "object" && entry !== null ? entry as Record<string, unknown> : null;
+              const variantCode = normalizeString(record?.variant_code);
+              const imageUrls = Array.isArray(record?.image_urls)
+                ? record.image_urls.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+                : [];
+              return variantCode ? { variantCode, imageUrls } : null;
+            })
+            .filter((entry): entry is { variantCode: string; imageUrls: string[] } => entry !== null)
+        : undefined,
+      variants: parseAdminVariants(body?.variants),
+    }));
+  } catch (error) {
+    return jsonError(400, error instanceof Error ? error.message : "Request failed");
+  }
+});
+
+app.patch("/api/v1/admin/products/:productId", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const productId = Number(c.req.param("productId"));
+  if (!Number.isFinite(productId)) {
+    return jsonError(400, "Invalid product id");
+  }
+  const body = await parseJsonBody<{
+    name?: unknown;
+    status?: unknown;
+    description?: unknown;
+    width_cm?: unknown;
+    depth_cm?: unknown;
+    height_cm?: unknown;
+    image_urls?: unknown;
+    variant_images?: unknown;
+    variants?: unknown;
+  }>(c);
+  try {
+    return c.json(await services(c).adminProducts.updateProduct(productId, {
+      name: body?.name === undefined ? undefined : normalizeString(body.name) ?? "",
+      status: body?.status === undefined ? undefined : normalizeProductStatus(body.status),
+      description: body?.description === undefined ? undefined : typeof body.description === "string" ? body.description : null,
+      widthCm: body?.width_cm === undefined ? undefined : body.width_cm == null || body.width_cm === "" ? null : Number(body.width_cm),
+      depthCm: body?.depth_cm === undefined ? undefined : body.depth_cm == null || body.depth_cm === "" ? null : Number(body.depth_cm),
+      heightCm: body?.height_cm === undefined ? undefined : body.height_cm == null || body.height_cm === "" ? null : Number(body.height_cm),
+      imageUrls: body?.image_urls === undefined
+        ? undefined
+        : Array.isArray(body.image_urls)
+          ? body.image_urls.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+          : [],
+      variantImages: body?.variant_images === undefined
+        ? undefined
+        : Array.isArray(body.variant_images)
+          ? body.variant_images
+              .map((entry) => {
+                const record = typeof entry === "object" && entry !== null ? entry as Record<string, unknown> : null;
+                const variantCode = normalizeString(record?.variant_code);
+                const imageUrls = Array.isArray(record?.image_urls)
+                  ? record.image_urls.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+                  : [];
+                return variantCode ? { variantCode, imageUrls } : null;
+              })
+              .filter((entry): entry is { variantCode: string; imageUrls: string[] } => entry !== null)
+          : [],
+      variants: body?.variants === undefined ? undefined : parseAdminVariants(body.variants),
+    }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Request failed";
+    const status = message.includes("not found") ? 404 : 400;
+    return jsonError(status, message);
+  }
+});
+
+app.delete("/api/v1/admin/products/:productId", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const productId = Number(c.req.param("productId"));
+  if (!Number.isFinite(productId)) {
+    return jsonError(400, "Invalid product id");
+  }
+  try {
+    return c.json(await services(c).adminProducts.deleteProduct(productId));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Request failed";
+    const status = message.includes("not found") ? 404 : 400;
+    return jsonError(status, message);
+  }
+});
+
+app.post("/api/v1/admin/products/batch", async (c) => {
+  const auth = await requireManager(c);
+  if ("error" in auth) {
+    return auth.error;
+  }
+  const body = await parseJsonBody<{
+    product_ids?: unknown;
+    width_cm?: unknown;
+    depth_cm?: unknown;
+    height_cm?: unknown;
+  }>(c);
+  const productIds = Array.isArray(body?.product_ids)
+    ? body.product_ids.map((item) => Number(item)).filter((item) => Number.isFinite(item))
+    : [];
+  try {
+    return c.json(await services(c).adminProducts.batchUpdateProducts({
+      productIds,
+      widthCm: body?.width_cm === undefined ? undefined : body.width_cm == null || body.width_cm === "" ? null : Number(body.width_cm),
+      depthCm: body?.depth_cm === undefined ? undefined : body.depth_cm == null || body.depth_cm === "" ? null : Number(body.depth_cm),
+      heightCm: body?.height_cm === undefined ? undefined : body.height_cm == null || body.height_cm === "" ? null : Number(body.height_cm),
+    }));
+  } catch (error) {
+    return jsonError(400, error instanceof Error ? error.message : "Request failed");
+  }
 });
 
 app.get("/api/v1/products/highlights/latest", async (c) => {
@@ -979,11 +1407,17 @@ app.get("/api/v1/auth/me", async (c) => {
   if (!session) {
     return jsonError(401, "Invalid session");
   }
+  const user = await repositories(c).users.getById(session.userId);
+  if (!user) {
+    return jsonError(404, "User not found");
+  }
   return c.json({
     token: session.token,
     user_id: session.userId,
     display_name: session.displayName,
     email: session.email,
+    role: user.role,
+    can_manage_products: canManageProducts({ role: user.role }),
   });
 });
 

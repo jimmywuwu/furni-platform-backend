@@ -8,7 +8,7 @@
     :root { --bg:#ffffff; --panel:#fff; --line:#e7e1d8; --text:#1c1a17; --muted:#6e675f; --accent:#b08a57; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
-    .container { display:flex; height:100vh; }
+    .container { display:flex; min-height:100dvh; height:100dvh; }
     .sidebar { width:250px; background:#f6f6f6; padding:42px 28px 24px; border-right:1px solid #e5e5e5; display:flex; flex-direction:column; align-items:stretch; }
     .logo { margin:0 0 44px; font-family: "Times New Roman", Georgia, serif; font-size:28px; letter-spacing:1px; font-weight:400; color:#2a251f; line-height:1; text-align:left; white-space:nowrap; }
     .logo .accent { color:#2a251f; }
@@ -29,8 +29,14 @@
     .sidebar-spacer { flex:1; }
     .sidebar-copyright { margin-top:8px; color:#222; font-size:12px; font-weight:400; }
 
-    .main { flex:1; padding:12px 16px; overflow:auto; }
+    .main { flex:1; min-width:0; padding:12px 16px; overflow:auto; }
     .user-bar { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin:4px 0 14px; }
+    .mobile-brand { display:none; font-family: "Times New Roman", Georgia, serif; font-size:24px; line-height:1; color:#2a251f; white-space:nowrap; }
+    .mobile-brand .accent { color:#2a251f; }
+    .mobile-nav { display:none; margin:0 0 16px; gap:8px; overflow:auto; padding-bottom:2px; scrollbar-width:none; }
+    .mobile-nav::-webkit-scrollbar { display:none; }
+    .mobile-nav-btn { border:1px solid #d9d2c8; background:#fff; color:#2f2923; border-radius:999px; padding:10px 14px; font-size:13px; white-space:nowrap; cursor:pointer; }
+    .mobile-nav-btn.active { background:#111; border-color:#111; color:#fff; }
     .top-search { flex:1; background:#fff; border:1px solid #000; border-radius:999px; height:44px; display:flex; align-items:center; padding:0 14px; min-width:220px; }
     .top-search input { flex:1; border:none; background:transparent; font-size:15px; outline:none; }
     .top-search-icon { color:#777; font-size:18px; margin-right:10px; }
@@ -238,11 +244,6 @@
     .price-stock-row { display:flex; gap:12px; margin-top:14px; }
     .kv { flex:1; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
     .kv .k { font-size:12px; color:var(--muted); } .kv .v { margin-top:6px; font-size:17px; font-weight:700; }
-    .sku-list { display:flex; flex-direction:column; gap:8px; }
-    .sku-item { border:1px solid var(--line); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; background:#fff; }
-    .sku-item.active { border-color:#222; background:#f7f7f3; }
-    .sku-code { font-size:13px; font-weight:600; } .sku-meta { font-size:12px; color:var(--muted); margin-top:4px; }
-    .sku-price { font-weight:700; }
     .scene-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .scene-thumb { width:100%; aspect-ratio:1/1; border-radius:8px; object-fit:cover; border:1px solid #ecece8; cursor:pointer; }
     .drawer-actions { display:flex; gap:10px; margin-top:18px; }
@@ -286,9 +287,78 @@
     .side-toast-btn { border:1px solid #3a3a3a; background:#1c1c1c; color:#fff; border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; }
     .side-toast-btn.primary { border-color:#fff; background:#fff; color:#111; }
 
-    @media (max-width:1240px) { .feed { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
-    @media (max-width:980px) { .sidebar { display:none; } .main { padding:12px; } .feed { grid-template-columns:repeat(3, minmax(0, 1fr)); } .user-bar { gap:8px; } .drawer { width:100vw; } .drawer-main-image { height:220px; } }
-    @media (max-width:680px) { .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); } .top-search { height:40px; min-width:0; } .hero { height:280px; } .store-scenes-head h2 { font-size:22px; } .store-scenes-head p { font-size:13px; } .store-scenes-track { grid-auto-columns:82%; gap:10px; } .store-scene-card img { height:300px; } .store-scenes-nav { width:34px; height:34px; font-size:20px; } .store-scene-modal-grid { grid-template-columns:1fr; } .about-hero { height:auto; padding:48px 16px 26px; } .about-hero h1 { font-size:28px; } .about-content { padding:22px 16px 10px; } .about-content h2 { font-size:26px; } .about-content p { font-size:15px; line-height:1.8; } .contact-wrap { padding:10px 0; } .contact-shell { grid-template-columns:1fr; gap:12px; } .contact-name { font-size:22px; } .contact-line { font-size:15px; } .contact-map { min-height:320px; } .contact-map iframe { height:320px; } }
+    @media (max-width:1240px) {
+      .feed { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+      .promo-track { grid-auto-columns:minmax(220px, 32%); }
+    }
+    @media (max-width:980px) {
+      body { background:#fff; }
+      .container { display:block; min-height:100vh; }
+      .sidebar { display:none; }
+      .main { padding:12px 12px 88px; min-height:100dvh; overflow:auto; }
+      .user-bar { justify-content:space-between; gap:8px; margin:0 0 12px; position:sticky; top:0; z-index:30; background:rgba(255,255,255,.96); backdrop-filter:blur(10px); padding:6px 0 10px; }
+      .mobile-brand { display:block; }
+      .mobile-nav { display:flex; position:sticky; top:58px; z-index:29; background:rgba(255,255,255,.96); backdrop-filter:blur(10px); padding:0 0 10px; margin:0 0 14px; }
+      .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+      .promo-track { grid-auto-columns:70%; gap:10px; overflow:auto; scroll-snap-type:x proximity; }
+      .promo-card, .store-scene-card { scroll-snap-align:start; }
+      .store-scenes-track { grid-auto-columns:72%; gap:10px; overflow:auto; }
+      .hero { height:320px; margin:0 0 14px; border-radius:18px; }
+      .title, .feed-tools, .store-scenes, .promo-rows { margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
+      .about-hero { height:auto; padding:56px 20px 28px; }
+      .about-content { padding:24px 20px 10px; }
+      .about-content h2 { font-size:30px; }
+      .about-content p { font-size:15px; line-height:1.8; }
+      .maps-shell { grid-template-columns:1fr; min-height:0; }
+      .maps-panel { border-right:none; border-bottom:1px solid #efefef; min-height:260px; }
+      .maps-preview { padding:14px; }
+      .contact-shell { grid-template-columns:1fr; gap:12px; }
+      .contact-map, .contact-map iframe { min-height:320px; height:320px; }
+      .drawer { width:100vw; max-width:100vw; }
+      .drawer-content { padding:18px 16px 26px; }
+      .drawer-main-image { height:240px; }
+      .price-stock-row { flex-direction:column; gap:8px; }
+      .store-scene-modal-grid { grid-template-columns:1fr; }
+      .store-scene-modal-box { width:min(100vw - 20px, 960px); padding:14px; }
+      .login-box { width:min(92vw, 360px); padding:22px; }
+      .user-menu-pop { right:0; width:min(260px, 88vw); }
+    }
+    @media (max-width:680px) {
+      .main { padding:10px 10px 92px; }
+      .mobile-brand { font-size:22px; }
+      .mobile-nav-btn { padding:9px 12px; font-size:12px; }
+      .feed { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+      .product-img { border-radius:12px; }
+      .product-name { font-size:13px; }
+      .hero { height:240px; }
+      .hero-overlay { left:10px; right:10px; bottom:10px; font-size:12px; padding:8px 10px; }
+      .arrow { width:36px; height:36px; }
+      .store-scenes-head h2, .promo-row-title, .title h1 { font-size:20px; }
+      .store-scenes-head p, .title p { font-size:12px; }
+      .store-scenes-track { grid-auto-columns:84%; }
+      .store-scene-card img { height:250px; }
+      .promo-track { grid-auto-columns:78%; }
+      .about-hero h1 { font-size:28px; }
+      .about-content { padding:20px 12px 8px; }
+      .about-content h2 { font-size:24px; }
+      .contact-wrap { padding:8px 0; }
+      .contact-info { padding:16px; }
+      .contact-name { font-size:22px; }
+      .contact-line { font-size:14px; }
+      .contact-actions { flex-direction:column; }
+      .contact-btn-primary, .contact-btn-secondary { width:100%; }
+      .drawer-title { font-size:22px; }
+      .drawer-sub { gap:6px; }
+      .chip { font-size:12px; }
+      .scene-grid { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:420px) {
+      .feed { grid-template-columns:1fr 1fr; }
+      .hero { height:220px; }
+      .store-scenes-track, .promo-track { grid-auto-columns:86%; }
+      .about-hero { padding:44px 14px 22px; }
+      .about-content p { font-size:14px; }
+    }
   </style>
 </head>
 <body>
@@ -303,13 +373,16 @@
         <span id="drawerCategory" class="chip"></span>
         <span id="drawerStockStatus" class="chip"></span>
       </div>
+      <div style="margin-top:10px;">
+        <select id="drawerVariantSelect" style="width:100%;border:1px solid #d8d8d3;border-radius:10px;padding:10px 12px;background:#fff;font-size:14px;">
+          <option value="">選擇 SKU</option>
+        </select>
+      </div>
       <p id="drawerDesc" class="desc"></p>
       <div class="price-stock-row">
-        <div class="kv"><div class="k">價格區間</div><div id="drawerPriceRange" class="v">-</div></div>
-        <div class="kv"><div class="k">選中 SKU 庫存</div><div id="drawerSkuStock" class="v">-</div></div>
+        <div class="kv"><div class="k">價格</div><div id="drawerPriceRange" class="v">-</div></div>
+        <div class="kv"><div class="k">庫存狀態</div><div id="drawerStockSummary" class="v">-</div></div>
       </div>
-      <h3 class="section-title">SKU 選擇</h3>
-      <div id="drawerSkuList" class="sku-list"></div>
       <h3 class="section-title">場景照</h3>
       <div id="drawerSceneGrid" class="scene-grid"></div>
       <h3 class="section-title">加入場景清單</h3>
@@ -364,6 +437,7 @@
 
     <div class="main" id="mainScroll">
       <div class="user-bar">
+        <div class="mobile-brand">D<span class="accent">AVID</span> F<span class="accent">IELD</span></div>
         <div id="userMenu" class="user-menu">
           <button class="user-icon-btn" onclick="toggleUserMenu(event)" title="帳號選單">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
@@ -380,6 +454,12 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="mobile-nav">
+        <button id="mobileNavHome" class="mobile-nav-btn active" onclick="switchView('home')">關於我們</button>
+        <button id="mobileNavFeed" class="mobile-nav-btn" onclick="switchView('feed')">精選商品</button>
+        <button id="mobileNavCollections" class="mobile-nav-btn" onclick="switchView('collections')">我的場景</button>
+        <button id="mobileNavContact" class="mobile-nav-btn" onclick="switchView('contact')">聯絡我們</button>
       </div>
       <section id="homeSection" class="view-section active">
         <div class="home-wrap">
@@ -443,7 +523,7 @@
           </div>
         </div>
       </div>
-      <div class="title"><h1>精選家具</h1><p>探索新品、挑選 SKU、直接加入收藏與門市清單</p></div>
+      <div class="title"><h1>精選家具</h1><p>探索新品、查看價格與細節，直接加入收藏與門市清單</p></div>
       <div class="feed-tools">
         <select id="feedCategorySelect" onchange="onFeedCategoryChange()">
           <option value="">全部分類</option>
@@ -595,7 +675,8 @@
     let activeView = 'home';
     let userLoggedIn = false, loginPromptShown = false;
     let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-    let currentUser = null, currentProduct = null, selectedVariant = null;
+    let currentUser = null, currentProduct = null;
+    let currentDrawerVariantId = null;
     let selectedCollectionId = null;
     let collectionsData = [];
     let selectedCollectionDetailId = null;
@@ -615,7 +696,6 @@
     let sceneMetaEditingCollectionId = null;
     let sideToastTimer = null;
     let sideToastTargetCollectionId = null;
-
     function formatPrice(v){ if(v===null||v===undefined||v==='') return '-'; return `$${Number(v).toLocaleString('en-US')}`; }
     function showLoader(){ document.getElementById('spinner').style.display='flex'; document.getElementById('loader').innerHTML=Array(8).fill('<div class="skeleton"></div>').join(''); }
     function hideLoader(){ document.getElementById('spinner').style.display='none'; document.getElementById('loader').innerHTML=''; }
@@ -624,6 +704,40 @@
       const headers = options.headers ? { ...options.headers } : {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       return fetch(path, { ...options, headers });
+    }
+
+    function getDrawerVariants(product){
+      return Array.isArray(product && product.variants) ? product.variants : [];
+    }
+
+    function getDrawerSelectedVariant(product){
+      const variants = getDrawerVariants(product);
+      if(currentDrawerVariantId){
+        const matched = variants.find(v => Number(v.id) === Number(currentDrawerVariantId));
+        if(matched) return matched;
+      }
+      const fallback = resolveItemVariant(null, product);
+      currentDrawerVariantId = fallback ? fallback.id : null;
+      return fallback;
+    }
+
+    function getVariantImages(product, variantId){
+      const images = Array.isArray(product && product.images) ? product.images : [];
+      return images
+        .filter(img => Number(img.variant_id || 0) === Number(variantId || 0) && !!img.image_url)
+        .map(img => img.image_url);
+    }
+
+    function renderDrawerVariantSelect(product){
+      const select = document.getElementById('drawerVariantSelect');
+      if(!select) return;
+      const variants = getDrawerVariants(product);
+      const fallback = getDrawerSelectedVariant(product);
+      const selectedId = fallback ? Number(fallback.id) : 0;
+      select.innerHTML = variants.length
+        ? variants.map(v => `<option value="${v.id}" ${Number(v.id) === selectedId ? 'selected' : ''}>${escapeHtml(v.variant_code || `SKU #${v.id}`)}</option>`).join('')
+        : '<option value="">無 SKU</option>';
+      select.disabled = !variants.length;
     }
 
     function refreshUserBar(){
@@ -675,6 +789,10 @@
       setActive('menuFeed', view==='feed');
       setActive('menuCollections', view==='collections');
       setActive('menuContact', view==='contact');
+      setActive('mobileNavHome', view==='home');
+      setActive('mobileNavFeed', view==='feed');
+      setActive('mobileNavCollections', view==='collections');
+      setActive('mobileNavContact', view==='contact');
 
       if(view==='collections') loadCollections();
     }
@@ -759,6 +877,7 @@
 
     function goCollectionsFromToast(){
       hideSideToast();
+      closeDrawer();
       switchView('collections');
       if(sideToastTargetCollectionId){
         selectedCollectionDetailId = sideToastTargetCollectionId;
@@ -944,12 +1063,10 @@
       const product = productDetailCache[item.product_id] || null;
       const variant = resolveItemVariant(item, product);
       const image = (variant && variant.image_url) || (product && product.cover_image_url) || 'https://img.davidfield.com.tw/hero-1.jpg';
-      const sku = variant ? (variant.variant_code || `SKU-${variant.id}`) : 'SKU未指定';
       const price = formatPrice(getItemResolvedPrice(item, product));
       detail.innerHTML = `
         <img src="${escapeHtml(image)}" alt="${escapeHtml(product ? (product.name || 'product') : 'product')}">
         <h4>${escapeHtml(product ? (product.name || `商品 #${item.product_id}`) : `商品 #${item.product_id}`)}</h4>
-        <div class="meta">${escapeHtml(sku)}</div>
         <div class="price">${price}</div>
         <div class="desc">${escapeHtml((product && product.description) ? product.description : '暫無商品描述')}</div>
       `;
@@ -993,7 +1110,7 @@
           return `
             <div class=\"store-scene-item\" onclick=\"selectStoreSceneItem(${index})\">
               <div class=\"store-scene-item-name\">${escapeHtml((p && p.name) ? p.name : `商品 #${i.product_id}`)}</div>
-              <div class=\"store-scene-item-sub\">${escapeHtml(v ? (v.variant_code || `SKU-${v.id}`) : 'SKU未指定')} ・ ${formatPrice(getItemResolvedPrice(i, p))}</div>
+              <div class=\"store-scene-item-sub\">${formatPrice(getItemResolvedPrice(i, p))}</div>
             </div>
           `;
         }).join('');
@@ -1052,8 +1169,11 @@
     }
 
     function resolveItemVariant(item, product){
-      if(!item || !product) return null;
+      if(!product) return null;
       const variants = Array.isArray(product.variants) ? product.variants : [];
+      if(!item){
+        return variants.find(v => Number(v.stock || 0) > 0) || variants[0] || null;
+      }
       if(item.variant_id){
         return variants.find(v => v.id === item.variant_id) || null;
       }
@@ -1094,7 +1214,7 @@
       }
 
       const variants = Array.isArray(product.variants) ? product.variants : [];
-      const selectedVariant = resolveItemVariant(selectedItem, product);
+      const defaultVariant = resolveItemVariant(selectedItem, product);
       const prices = variants.map(v => Number(v.price || 0)).filter(v => !Number.isNaN(v));
       const priceText = prices.length
         ? (Math.min(...prices) === Math.max(...prices) ? formatPrice(Math.min(...prices)) : `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`)
@@ -1104,9 +1224,9 @@
         <h3>${escapeHtml(product.name || '')}</h3>
         <div style="font-size:13px;color:#6e665d;">${escapeHtml(product.brand || '品牌未設定')} ・ ${escapeHtml(product.category || '分類未設定')}</div>
         <div class="panel-card" style="padding:10px 12px; margin-top:10px;">
-          <div style="font-size:12px;color:#6f665c;">已選 SKU</div>
-          <div style="margin-top:4px;font-size:13px;font-weight:700;">${selectedVariant ? escapeHtml(selectedVariant.variant_code || `SKU-${selectedVariant.id}`) : 'SKU 未指定'}</div>
-          <div style="margin-top:3px;font-size:12px;color:#6f665c;">庫存 ${selectedVariant ? Number(selectedVariant.stock || 0) : '-'} / ${selectedVariant ? formatPrice(selectedVariant.price) : '-'}</div>
+          <div style="font-size:12px;color:#6f665c;">商品資訊</div>
+          <div style="margin-top:4px;font-size:13px;font-weight:700;">${defaultVariant && Number(defaultVariant.stock || 0) > 0 ? '有庫存' : '缺貨'}</div>
+          <div style="margin-top:3px;font-size:12px;color:#6f665c;">${defaultVariant ? formatPrice(defaultVariant.price) : priceText}</div>
         </div>
         <div style="margin-top:10px;font-size:14px;"><strong>價格：</strong>${priceText}</div>
         <p style="margin-top:10px;color:#544d45;line-height:1.55;">${escapeHtml(product.description || '暫無描述')}</p>
@@ -1317,7 +1437,7 @@
         const v = resolveItemVariant(i, p);
         const title = p ? (p.name || `商品 #${i.product_id}`) : `商品 #${i.product_id}`;
         const sub = p
-          ? `${v ? (v.variant_code || `SKU-${v.id}`) : 'SKU未指定'} ・ 庫存 ${v ? Number(v.stock || 0) : '-'} ・ ${formatPrice(getItemResolvedPrice(i, p))}`
+          ? `庫存 ${v ? Number(v.stock || 0) : '-'} ・ ${formatPrice(getItemResolvedPrice(i, p))}`
           : '載入中...';
         const activeCls = i.id === selectedCollectionItemId ? ' active' : '';
         return `
@@ -1453,7 +1573,7 @@
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
               product_id: currentProduct.id,
-              variant_id: selectedVariant ? selectedVariant.id : null,
+              variant_id: getDrawerSelectedVariant(currentProduct)?.id || null,
               position: 0,
               note: ''
             })
@@ -1628,7 +1748,6 @@
       toggleDrawerCreateRow(false);
       await loadDrawerCollections();
       await loadCollections();
-      showSideToast('場景清單已建立，前往我的場景可繼續編輯。', createdData.id);
     }
 
     function buildSceneImages(product){
@@ -1639,30 +1758,17 @@
       return uniq.slice(0,6);
     }
 
-    function updateDrawerByVariant(product, variant){
+    function updateDrawerProductState(product){
+      const variant = getDrawerSelectedVariant(product);
+      const variantImages = variant ? getVariantImages(product, variant.id) : [];
       const imgEl=document.getElementById('drawerImage');
       const fallback=product.cover_image_url || '';
-      const candidate = fallback;
+      const candidate = variantImages[0] || fallback;
       imgEl.onerror=()=>{ imgEl.onerror=null; imgEl.src=fallback; };
       imgEl.src=candidate || fallback;
-      document.getElementById('drawerSkuStock').textContent = `${(variant&&variant.stock)||0}`;
+      document.getElementById('drawerPriceRange').textContent = variant ? formatPrice(Number(variant.price || 0)) : '-';
+      document.getElementById('drawerStockSummary').textContent = (variant && Number(variant.stock || 0) > 0) ? '有庫存' : '缺貨';
       document.getElementById('drawerStockStatus').textContent = ((variant&&variant.stock)||0)>0 ? '有庫存':'缺貨';
-    }
-
-    function renderSkuList(product){
-      const variants = Array.isArray(product.variants) ? product.variants : [];
-      const list=document.getElementById('drawerSkuList'); list.innerHTML='';
-      if(!variants.length){ selectedVariant=null; document.getElementById('drawerSkuStock').textContent='-'; return; }
-      if(!selectedVariant || !variants.find(v=>v.id===selectedVariant.id)) selectedVariant = variants.find(v=>(v.stock||0)>0) || variants[0];
-      variants.forEach(v=>{
-        const item=document.createElement('div'); item.className=`sku-item${selectedVariant&&selectedVariant.id===v.id?' active':''}`;
-        item.onclick=()=>{ selectedVariant=v; updateDrawerByVariant(product, selectedVariant); renderSkuList(product); };
-        const left=document.createElement('div'); const code=document.createElement('div'); code.className='sku-code'; code.textContent=v.variant_code||`SKU-${v.id}`;
-        const meta=document.createElement('div'); meta.className='sku-meta'; meta.textContent=`庫存 ${v.stock||0}`; left.append(code,meta);
-        const right=document.createElement('div'); right.className='sku-price'; right.textContent=formatPrice(v.price);
-        item.append(left,right); list.appendChild(item);
-      });
-      document.getElementById('drawerSkuStock').textContent = `${selectedVariant.stock||0}`;
     }
 
     function openSceneModal(url){ const modal=document.getElementById('sceneModal'); const img=document.getElementById('sceneModalImage'); img.src=url||''; modal.classList.add('open'); }
@@ -1670,7 +1776,8 @@
 
     function renderScenes(product){
       const grid=document.getElementById('drawerSceneGrid'); grid.innerHTML='';
-      const sceneImages = buildSceneImages(product);
+      const variant = getDrawerSelectedVariant(product);
+      const sceneImages = variant ? getVariantImages(product, variant.id) : [];
       if(!sceneImages.length){
         grid.innerHTML = '<div class="maps-empty">尚無場景照片</div>';
         return;
@@ -1680,23 +1787,19 @@
 
     function fillDrawerBase(product){
       document.getElementById('drawerTitle').textContent=product.name||'';
-      document.getElementById('drawerImage').src=product.cover_image_url||'';
       document.getElementById('drawerBrand').textContent=product.brand||'品牌未設定';
       document.getElementById('drawerCategory').textContent=product.category||'分類未設定';
       document.getElementById('drawerDesc').textContent=product.description||'暫無描述';
-      const variants=Array.isArray(product.variants)?product.variants:[];
-      const prices=variants.map(v=>Number(v.price||0));
-      document.getElementById('drawerPriceRange').textContent = prices.length ? ((Math.min(...prices)===Math.max(...prices))?formatPrice(Math.min(...prices)):`${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`) : '-';
-      const stockAvailable = variants.some(v=>(v.stock||0)>0);
-      document.getElementById('drawerStockStatus').textContent = stockAvailable ? '有庫存':'缺貨';
+      renderDrawerVariantSelect(product);
     }
 
     async function openProduct(id, options = {}){
       try{
         const res=await fetch(`${API_PREFIX}/products/${id}`);
         const product=await res.json();
-        currentProduct=product; selectedVariant=null;
-        fillDrawerBase(product); renderSkuList(product); if(selectedVariant) updateDrawerByVariant(product, selectedVariant); renderScenes(product);
+        currentProduct=product;
+        currentDrawerVariantId = null;
+        fillDrawerBase(product); updateDrawerProductState(product); renderScenes(product);
         await loadDrawerCollections();
         document.getElementById('productDrawer').classList.add('open'); document.getElementById('drawerBackdrop').classList.add('open');
         if(options.openCollectionMenu){
@@ -1707,7 +1810,7 @@
       }catch(err){ console.error('openProduct error', err); }
     }
 
-    function closeDrawer(){ document.getElementById('productDrawer').classList.remove('open'); document.getElementById('drawerBackdrop').classList.remove('open'); }
+    function closeDrawer(){ currentDrawerVariantId = null; document.getElementById('productDrawer').classList.remove('open'); document.getElementById('drawerBackdrop').classList.remove('open'); }
     function showLogin(){ document.getElementById('loginModal').style.display='flex'; }
     function closeLogin(){ document.getElementById('loginModal').style.display='none'; }
 
@@ -1762,6 +1865,13 @@
     function handleAuthAction(){ if(userLoggedIn) logout(); else showLogin(); }
 
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeStoreSceneModal(); closeSceneModal(); closeDrawer(); closeLogin(); closeCollectionCreateModal(); closeSceneMetaModal(); closeAppDialog(false); hideSideToast(); } });
+    document.getElementById('drawerVariantSelect')?.addEventListener('change', (event) => {
+      currentDrawerVariantId = Number(event.target.value || 0) || null;
+      if(currentProduct){
+        updateDrawerProductState(currentProduct);
+        renderScenes(currentProduct);
+      }
+    });
     document.addEventListener('click', (e)=>{
       const picker = document.getElementById('drawerCollectionPicker');
       if(picker && !picker.contains(e.target)) toggleDrawerCollectionMenu(false);

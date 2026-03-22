@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>David Field Admin</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: "#fcf9f8",
+            surface: "#fcf9f8",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f6f3f2",
+            "surface-container": "#f0eded",
+            "surface-container-high": "#eae7e7",
+            "surface-container-highest": "#e5e2e1",
+            "on-surface": "#1b1c1c",
+            "on-surface-variant": "#53433d",
+            outline: "#86736c",
+            "outline-variant": "#d9c2ba",
+            primary: "#86452a",
+            "primary-container": "#a45c40",
+            "primary-fixed": "#ffdbce",
+            tertiary: "#00625b",
+            "tertiary-fixed": "#9af2e8",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            headline: ["Manrope", "sans-serif"],
+            body: ["Inter", "sans-serif"]
+          },
+          boxShadow: {
+            soft: "0 18px 50px rgba(71, 48, 33, 0.08)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .font-headline { font-family: "Manrope", sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 450, "GRAD" 0, "opsz" 24;
+    }
+    .primary-gradient {
+      background: linear-gradient(135deg, #86452a 0%, #a45c40 100%);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface">
+  <aside class="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col bg-stone-100 px-4 py-8 lg:flex">
+    <div class="px-4">
+      <h1 class="font-headline text-2xl font-extrabold tracking-tight text-orange-950">David Field</h1>
+      <p class="mt-1 text-xs font-medium uppercase tracking-[0.24em] text-on-surface-variant">產品管理後台</p>
+    </div>
+    <nav class="mt-10 flex-1 space-y-1">
+      <a class="flex items-center gap-3 rounded-xl bg-orange-200 px-4 py-3 text-sm font-medium text-orange-950" href="/admin">
+        <span class="material-symbols-outlined">chair</span>
+        <span>產品管理</span>
+      </a>
+    </nav>
+    <div class="mt-auto px-4">
+      <button id="openCreateBtn" class="primary-gradient flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white shadow-soft">
+        <span class="material-symbols-outlined">add</span>
+        <span>新增產品</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="lg:ml-64">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <section id="loginNotice" class="mb-8 rounded-[28px] border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-soft">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 class="font-headline text-2xl font-extrabold">管理員登入</h3>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant">
+              這個商品運維頁只使用現有後端：商品列表、單筆新增/編輯、圖片上傳、SKU 維護與批量尺寸更新。沒有新增不存在的 API。
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button id="localLoginBtn" class="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white">本機登入</button>
+            <button id="lineLoginBtn" class="rounded-2xl border border-outline-variant/40 px-5 py-3 text-sm font-semibold text-on-surface">LINE 登入</button>
+            <button id="googleLoginBtn" class="rounded-2xl border border-outline-variant/40 px-5 py-3 text-sm font-semibold text-on-surface">Google 登入</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div class="flex items-center rounded-xl bg-surface-container-low p-1 shadow-sm">
+            <button id="filterAllBtn" class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-on-surface shadow-sm">全部商品</button>
+            <button id="filterPublishedBtn" class="px-4 py-2 text-sm font-medium text-on-surface-variant">已發佈</button>
+            <button id="filterDraftBtn" class="px-4 py-2 text-sm font-medium text-on-surface-variant">草稿</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button id="openCreateBtnTop" class="primary-gradient rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-soft">新增產品</button>
+        </div>
+      </section>
+
+      <section class="overflow-hidden rounded-2xl bg-surface-container-lowest shadow-soft ring-1 ring-outline-variant/10">
+        <table class="min-w-full border-collapse text-left">
+          <thead>
+            <tr class="bg-surface-container-low/50">
+              <th class="w-12 px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">
+                <input id="selectAll" type="checkbox" class="h-4 w-4 rounded border-outline-variant/50 text-primary focus:ring-primary/40" />
+              </th>
+              <th class="px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Product</th>
+              <th class="px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Product Key</th>
+              <th class="px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Price</th>
+              <th class="px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Stock</th>
+              <th class="px-6 py-5 text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Status</th>
+              <th class="px-6 py-5 text-right text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody" class="divide-y divide-surface-container-low">
+            <tr><td colspan="7" class="px-6 py-16 text-center text-sm text-on-surface-variant">尚未載入商品</td></tr>
+          </tbody>
+        </table>
+        <div class="flex items-center justify-between border-t border-surface-container-low bg-surface-container-low/20 px-6 py-6">
+          <span id="paginationInfo" class="text-xs font-bold uppercase tracking-[0.24em] text-on-surface-variant">Showing 0 products</span>
+          <div class="flex items-center gap-2">
+            <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant">
+              <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white">1</button>
+            <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/30 text-xs font-bold text-on-surface-variant">2</button>
+            <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/30 text-xs font-bold text-on-surface-variant">3</button>
+            <button class="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant">
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="editorModal" class="fixed inset-0 z-50 hidden bg-black/45 px-3 py-6 backdrop-blur-sm">
+    <div class="mx-auto flex h-full max-w-6xl items-start justify-center overflow-y-auto">
+      <div class="w-full rounded-[28px] bg-surface p-6 shadow-soft sm:p-8">
+        <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="text-sm font-medium tracking-wide text-primary">商品管理</p>
+            <h1 id="formTitle" class="mt-1 font-headline text-4xl font-extrabold tracking-tight">新增產品</h1>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button id="closeModalBtn" class="rounded-lg px-6 py-2.5 font-semibold text-on-surface hover:bg-surface-container-high">取消</button>
+            <button id="saveDraftBtnTop" class="rounded-lg border border-outline-variant/30 px-6 py-2.5 font-semibold text-on-surface">儲存草稿</button>
+            <button id="saveBtnTop" class="primary-gradient rounded-lg px-8 py-2.5 font-bold text-white shadow-soft">發佈商品</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-8">
+          <div class="col-span-12 space-y-8 lg:col-span-8">
+            <section class="rounded-xl bg-surface-container-low p-8">
+              <div class="mb-6 flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">info</span>
+                <h3 class="font-headline text-xl font-bold">基本資訊</h3>
+              </div>
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">商品狀態</label>
+                    <select id="editorStatusSelect" class="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm focus:ring-2 focus:ring-primary/35">
+                      <option value="draft">草稿</option>
+                      <option value="published">已發佈</option>
+                      <option value="archived">已封存</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1.5 md:col-span-3">
+                    <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">商品名稱</label>
+                    <input id="productName" type="text" class="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm focus:ring-2 focus:ring-primary/35" placeholder="輸入商品名稱" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-xl bg-surface-container-low p-8">
+              <div class="mb-6 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-primary">qr_code_2</span>
+                  <h3 class="font-headline text-xl font-bold">SKU 維護</h3>
+                </div>
+                <button id="addSkuRowBtn" class="rounded-lg border border-outline-variant/30 px-4 py-2 text-sm font-semibold text-on-surface">新增空白 SKU</button>
+              </div>
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                  <input id="skuScanInput" class="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm focus:ring-2 focus:ring-primary/35" placeholder="輸入 13 碼 SKU 條碼，會自動歸類到 product" />
+                  <button id="addSkuByBarcodeBtn" class="primary-gradient rounded-lg px-5 py-3 text-sm font-bold text-white shadow-soft">加入 SKU</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-outline-variant/15">
+                  <div class="grid min-w-[980px] grid-cols-[minmax(0,1.2fr)_100px_100px_100px_100px_100px_160px_84px] gap-0 bg-surface-container-high px-4 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                    <div>SKU 條碼</div>
+                    <div>價格</div>
+                    <div>庫存</div>
+                    <div>寬度</div>
+                    <div>深度</div>
+                    <div>高度</div>
+                    <div>歸類</div>
+                    <div class="text-right">操作</div>
+                  </div>
+                  <div id="skuRows" class="divide-y divide-outline-variant/10 bg-surface-container-lowest"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-xl bg-surface-container-low p-8">
+              <div class="mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-primary">image</span>
+                  <h3 class="font-headline text-xl font-bold">圖片庫</h3>
+                </div>
+                <label class="cursor-pointer text-sm font-bold text-primary hover:underline">
+                  新增圖片
+                  <input id="imageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" />
+                </label>
+              </div>
+              <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
+                <select id="imageVariantSelect" class="rounded-lg border-none bg-surface-container-lowest p-3 text-sm focus:ring-2 focus:ring-primary/35"></select>
+                <div id="imageVariantHint" class="rounded-lg border border-outline-variant/10 bg-surface-container-lowest px-4 py-3 text-sm text-on-surface-variant">
+                  圖片目前會綁到所選 SKU。
+                </div>
+              </div>
+              <div id="imagePreview" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
+            </section>
+          </div>
+
+          <div class="col-span-12 lg:col-span-4">
+            <section class="sticky top-6 rounded-xl bg-surface-container-low p-8">
+              <div class="mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-primary">tune</span>
+                  <h3 class="font-headline text-xl font-bold">編輯操作</h3>
+                </div>
+                <button id="resetBtn" class="rounded-lg border border-outline-variant/30 px-4 py-2 text-sm font-semibold text-on-surface">清空</button>
+              </div>
+              <div class="rounded-lg border border-outline-variant/10 bg-surface-container-lowest p-4 text-sm leading-7 text-on-surface-variant">
+                <div class="font-semibold text-on-surface">目前對接方式</div>
+                <ul class="mt-2 space-y-1">
+                  <li>商品以 product key 編輯，SKU 以清單維護。</li>
+                  <li>價格欄位後端必填，前端固定送 `0`。</li>
+                  <li>輸入新條碼時，會先依前 9 碼嘗試對應既有商品。</li>
+                </ul>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div id="formStatus" class="mt-6 min-h-[20px] text-sm text-on-surface-variant"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_PREFIX = "/api/v1";
+    const AUTH_TOKEN_KEY = "furni_auth_token";
+    let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
+    let currentUser = null;
+    let products = [];
+    let selectedIds = new Set();
+    let editingProductId = null;
+    let variantImageUrls = {};
+    let selectedImageVariantCode = "";
+    let pendingImageFiles = [];
+    let pendingImagePreviews = [];
+    let currentEditingVariants = [];
+    let resolvedProductIdentity = null;
+    let searchKeyword = "";
+    let listFilterStatus = "all";
+
+    function $(id) { return document.getElementById(id); }
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text || "";
+      return div.innerHTML;
+    }
+    function apiFetch(path, options = {}) {
+      const headers = options.headers ? { ...options.headers } : {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      return fetch(path, { ...options, headers });
+    }
+    function numberValue(id, nullable = true) {
+      const raw = String($(id).value || "").trim();
+      if (!raw) return nullable ? null : 0;
+      const value = Number(raw);
+      return Number.isFinite(value) ? value : (nullable ? null : 0);
+    }
+    function filteredProducts() {
+      const keyword = searchKeyword.toLowerCase();
+      return products.filter((item) => {
+        const matchesKeyword = !keyword
+          || String(item.name || "").toLowerCase().includes(keyword)
+          || String(item.product_code || "").toLowerCase().includes(keyword);
+        const status = normalizeStatus(item.status);
+        const matchesStatus = listFilterStatus === "all" || status === listFilterStatus;
+        return matchesKeyword && matchesStatus;
+      });
+    }
+    function normalizeStatus(value) {
+      const status = String(value || "").trim().toLowerCase();
+      if (status === "published" || status === "archived") return status;
+      return "draft";
+    }
+    function updateFilterTabs() {
+      const configs = [
+        { id: "filterAllBtn", value: "all" },
+        { id: "filterPublishedBtn", value: "published" },
+        { id: "filterDraftBtn", value: "draft" }
+      ];
+      configs.forEach((config) => {
+        const active = listFilterStatus === config.value;
+        $(config.id).className = active
+          ? "rounded-lg bg-white px-4 py-2 text-sm font-semibold text-on-surface shadow-sm"
+          : "px-4 py-2 text-sm font-medium text-on-surface-variant";
+      });
+    }
+    function parseBarcodeParts(raw) {
+      const barcode = String(raw || "").trim();
+      if (!/^\d{13}$/.test(barcode)) {
+        return null;
+      }
+      return {
+        raw: barcode,
+        vendor: barcode.slice(0, 3),
+        category: barcode.slice(3, 5),
+        productNo: barcode.slice(5, 9),
+        typeNo: barcode.slice(9, 13),
+        productIdentity: barcode.slice(0, 9)
+      };
+    }
+    function variantBarcodeParts(variant) {
+      if (!variant || typeof variant.variant_code !== "string") return null;
+      return parseBarcodeParts(variant.variant_code);
+    }
+    function renderBarcodeHelper(parts, options = {}) {
+      const helper = $("barcodeHelper");
+      if (!helper) {
+        resolvedProductIdentity = parts ? parts.productIdentity : null;
+        return;
+      }
+      if (!parts) {
+        resolvedProductIdentity = null;
+        helper.innerHTML = "輸入 13 碼條碼後，前端會自動解析 vendor / category / product / type，並嘗試把 SKU 歸到既有商品。";
+        return;
+      }
+      resolvedProductIdentity = parts.productIdentity;
+      const lines = [
+        `vendor: ${parts.vendor}`,
+        `category: ${parts.category}`,
+        `product: ${parts.productNo}`,
+        `type: ${parts.typeNo}`,
+        `product key: ${parts.productIdentity}`
+      ];
+      if (options.message) {
+        lines.push(options.message);
+      }
+      helper.innerHTML = lines.map((line, index) => `<div class="${index === lines.length - 1 && options.message ? "mt-2 font-semibold text-primary" : ""}">${escapeHtml(line)}</div>`).join("");
+    }
+    function syncResolvedIdentityFromVariants() {
+      const parts = currentEditingVariants
+        .map((variant) => variantBarcodeParts(variant))
+        .find(Boolean);
+      resolvedProductIdentity = parts ? parts.productIdentity : null;
+    }
+    function parseIdentityParts(productIdentity) {
+      const value = String(productIdentity || "").trim();
+      if (!/^\d{9}$/.test(value)) return null;
+      return {
+        vendor: value.slice(0, 3),
+        category: value.slice(3, 5),
+        productNo: value.slice(5, 9),
+        typeNo: "----",
+        productIdentity: value
+      };
+    }
+    function productKeyBadge(parts) {
+      return `${parts.vendor}-${parts.category}-${parts.productNo}`;
+    }
+    function normalizeVariantCode(value) {
+      return String(value || "").trim();
+    }
+    function syncSelectedImageVariantCode() {
+      const variantCodes = currentEditingVariants
+        .map((variant) => normalizeVariantCode(variant.variant_code))
+        .filter(Boolean);
+      if (selectedImageVariantCode && variantCodes.includes(selectedImageVariantCode)) {
+        return;
+      }
+      selectedImageVariantCode = variantCodes[0] || "";
+    }
+    function selectedVariantImages() {
+      const key = normalizeVariantCode(selectedImageVariantCode);
+      return Array.isArray(variantImageUrls[key]) ? [...variantImageUrls[key]] : [];
+    }
+    function setSelectedVariantImages(nextUrls) {
+      const key = normalizeVariantCode(selectedImageVariantCode);
+      if (!key) return;
+      variantImageUrls = {
+        ...variantImageUrls,
+        [key]: [...nextUrls],
+      };
+    }
+    function buildVariantImagesPayload() {
+      return currentEditingVariants
+        .map((variant) => normalizeVariantCode(variant.variant_code))
+        .filter(Boolean)
+        .map((variantCode) => ({
+          variant_code: variantCode,
+          image_urls: Array.isArray(variantImageUrls[variantCode]) ? [...variantImageUrls[variantCode]] : [],
+        }));
+    }
+    function renderImageVariantSelector() {
+      const select = $("imageVariantSelect");
+      syncSelectedImageVariantCode();
+      const options = currentEditingVariants
+        .map((variant) => normalizeVariantCode(variant.variant_code))
+        .filter(Boolean);
+      if (!options.length) {
+        select.innerHTML = `<option value="">先加入 SKU</option>`;
+        select.value = "";
+        $("imageVariantHint").textContent = "請先加入 SKU，再為該 SKU 上傳照片。";
+        return;
+      }
+      select.innerHTML = options.map((variantCode) => `<option value="${escapeHtml(variantCode)}">${escapeHtml(variantCode)}</option>`).join("");
+      select.value = selectedImageVariantCode || options[0];
+      $("imageVariantHint").textContent = `目前編輯 SKU ${select.value} 的照片。`;
+    }
+    function hydrateVariantImages(product) {
+      const variantCodeById = new Map(
+        (Array.isArray(product.variants) ? product.variants : []).map((variant) => [variant.id, normalizeVariantCode(variant.variant_code)]),
+      );
+      const next = {};
+      for (const variant of Array.isArray(product.variants) ? product.variants : []) {
+        const code = normalizeVariantCode(variant.variant_code);
+        if (code) {
+          next[code] = [];
+        }
+      }
+      for (const image of Array.isArray(product.images) ? product.images : []) {
+        const variantCode = variantCodeById.get(image.variant_id) || "";
+        if (!variantCode) continue;
+        if (!Array.isArray(next[variantCode])) {
+          next[variantCode] = [];
+        }
+        next[variantCode].push(image.image_url);
+      }
+      variantImageUrls = next;
+      syncSelectedImageVariantCode();
+    }
+    function renderSkuRows() {
+      const rows = $("skuRows");
+      if (!currentEditingVariants.length) {
+        rows.innerHTML = `
+          <div class="px-4 py-10 text-center text-sm text-on-surface-variant">
+            目前還沒有 SKU。輸入條碼加入，或新增空白 SKU 後手動填寫。
+          </div>`;
+        return;
+      }
+      rows.innerHTML = currentEditingVariants.map((variant, index) => {
+        const barcode = String(variant.variant_code || "").trim();
+        const parts = parseBarcodeParts(barcode);
+        const categoryText = parts ? productKeyBadge(parts) : "未解析";
+        const typeText = parts ? `type ${parts.typeNo}` : "需輸入 13 碼";
+        return `
+          <div class="grid min-w-[980px] grid-cols-[minmax(0,1.2fr)_100px_100px_100px_100px_100px_160px_84px] items-center gap-3 px-4 py-3">
+            <input
+              value="${escapeHtml(barcode)}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              placeholder="13 碼 SKU 條碼"
+              onchange="setSkuBarcodeAt(${index}, this.value)"
+            />
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value="${escapeHtml(String(Math.max(0, Number(variant.price || 0))))}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              onchange="setSkuPriceAt(${index}, this.value)"
+            />
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value="${escapeHtml(String(Math.max(0, Number(variant.stock || 0))))}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              onchange="setSkuStockAt(${index}, this.value)"
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value="${escapeHtml(variant.width_cm == null ? "" : String(variant.width_cm))}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              onchange="setSkuWidthAt(${index}, this.value)"
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value="${escapeHtml(variant.depth_cm == null ? "" : String(variant.depth_cm))}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              onchange="setSkuDepthAt(${index}, this.value)"
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value="${escapeHtml(variant.height_cm == null ? "" : String(variant.height_cm))}"
+              class="w-full rounded-lg border-none bg-surface-container p-3 text-sm focus:ring-2 focus:ring-primary/35"
+              onchange="setSkuHeightAt(${index}, this.value)"
+            />
+            <div class="text-sm text-on-surface-variant">
+              <div class="font-semibold text-on-surface">${escapeHtml(categoryText)}</div>
+              <div class="mt-1 text-xs">${escapeHtml(typeText)}</div>
+            </div>
+            <div class="text-right">
+              <button class="rounded-lg border border-outline-variant/30 px-3 py-2 text-xs font-semibold text-error" onclick="removeSkuRow(${index})" ${currentEditingVariants.length <= 1 ? "disabled" : ""}>移除</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+    async function pickMatchedProduct(parts) {
+      const matches = [];
+      for (const item of products) {
+        const res = await apiFetch(`${API_PREFIX}/admin/products/${item.id}`);
+        if (!res.ok) continue;
+        const product = await res.json().catch(() => null);
+        if (!product || !Array.isArray(product.variants)) continue;
+        const variants = product.variants.map((variant) => ({
+          variant,
+          parts: parseBarcodeParts(variant.variant_code || "")
+        }));
+        const sameIdentity = variants.filter((entry) => entry.parts && entry.parts.productIdentity === parts.productIdentity);
+        if (!sameIdentity.length) continue;
+        const exactVariant = sameIdentity.find((entry) => entry.parts.raw === parts.raw)?.variant || null;
+        matches.push({
+          product,
+          exactVariant,
+          sameIdentityCount: sameIdentity.length
+        });
+      }
+      if (!matches.length) return null;
+      matches.sort((a, b) => {
+        if (!!b.exactVariant !== !!a.exactVariant) return Number(!!b.exactVariant) - Number(!!a.exactVariant);
+        if (b.sameIdentityCount !== a.sameIdentityCount) return b.sameIdentityCount - a.sameIdentityCount;
+        return Number(a.product.id || 0) - Number(b.product.id || 0);
+      });
+      return {
+        winner: matches[0],
+        duplicateCount: matches.length
+      };
+    }
+    function applyProductToEditor(product, options = {}) {
+      editingProductId = product.id;
+      currentEditingVariants = Array.isArray(product.variants) ? product.variants : [];
+      syncResolvedIdentityFromVariants();
+      hydrateVariantImages(product);
+      $("formTitle").textContent = `編輯商品 #${product.id}`;
+      $("productName").value = product.name ?? "";
+      pendingImageFiles = [];
+      pendingImagePreviews = [];
+      $("imageFiles").value = "";
+      renderPreview();
+      renderSkuRows();
+      const helperParts = options.parts || parseIdentityParts(resolvedProductIdentity);
+      if (helperParts) {
+        renderBarcodeHelper(helperParts, { message: options.message || `已載入商品 #${product.id}` });
+      }
+    }
+    async function ensureProductMatchedByBarcode(barcodeInput) {
+      const parts = parseBarcodeParts(barcodeInput);
+      if (!parts) {
+        renderBarcodeHelper(null);
+        return { matched: false, parts: null, loadedProduct: false };
+      }
+      syncResolvedIdentityFromVariants();
+      if (resolvedProductIdentity && resolvedProductIdentity !== parts.productIdentity) {
+        renderBarcodeHelper(parts, { message: `此 SKU 屬於 product key ${parts.productIdentity}，和目前編輯商品 ${resolvedProductIdentity} 不同` });
+        return { matched: false, parts, loadedProduct: false, conflict: true };
+      }
+      renderBarcodeHelper(parts, { message: "檢查既有商品中..." });
+      const matchResult = await pickMatchedProduct(parts);
+      if (matchResult) {
+        const { winner, duplicateCount } = matchResult;
+        applyProductToEditor(winner.product, {
+          parts,
+          message: winner.exactVariant
+            ? `已對應到既有商品 #${winner.product.id}，目前編輯 SKU ${parts.raw}${duplicateCount > 1 ? `；偵測到 ${duplicateCount} 筆同 product key，已先選用 Product #${winner.product.id}` : ""}`
+            : `已對應到既有商品 #${winner.product.id}，會新增 SKU ${parts.raw}${duplicateCount > 1 ? `；偵測到 ${duplicateCount} 筆同 product key，已先選用 Product #${winner.product.id}` : ""}`
+        });
+        return { matched: true, parts, loadedProduct: true, productId: winner.product.id, duplicateCount };
+      }
+      editingProductId = null;
+      if (!currentEditingVariants.length) {
+        currentEditingVariants = [];
+      }
+      $("formTitle").textContent = "新增產品";
+      renderBarcodeHelper(parts, { message: `找不到 product key ${parts.productIdentity}，會建立新商品` });
+      return { matched: false, parts, loadedProduct: false };
+    }
+    async function setSkuBarcodeAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      const previousCode = normalizeVariantCode(currentEditingVariants[index].variant_code);
+      const nextCode = normalizeVariantCode(value);
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        variant_code: nextCode
+      };
+      if (previousCode !== nextCode) {
+        if (previousCode && Array.isArray(variantImageUrls[previousCode])) {
+          variantImageUrls = {
+            ...variantImageUrls,
+            [nextCode]: [...variantImageUrls[previousCode]],
+          };
+          delete variantImageUrls[previousCode];
+        }
+        if (selectedImageVariantCode === previousCode) {
+          selectedImageVariantCode = nextCode;
+        }
+      }
+      syncResolvedIdentityFromVariants();
+      syncSelectedImageVariantCode();
+      renderSkuRows();
+      renderImageVariantSelector();
+      const parts = parseBarcodeParts(value);
+      if (!parts) return;
+      const validVariantCount = currentEditingVariants.filter((variant) => parseBarcodeParts(variant.variant_code || "")).length;
+      if (!editingProductId && validVariantCount <= 1) {
+        const result = await ensureProductMatchedByBarcode(value);
+        if (!result.parts || !result.matched) return;
+        const exists = currentEditingVariants.some((variant) => String(variant.variant_code || "").trim() === parts.raw);
+        if (!exists) {
+          currentEditingVariants = [
+            ...currentEditingVariants,
+            { variant_code: parts.raw, stock: 0, price: 0, width_cm: null, depth_cm: null, height_cm: null, color: null, size_label: null, material: null }
+          ];
+          renderSkuRows();
+        }
+      }
+    }
+    function setSkuStockAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        stock: Math.max(0, Number(value || 0))
+      };
+    }
+    function setSkuPriceAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        price: Math.max(0, Number(value || 0))
+      };
+    }
+    function setSkuWidthAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        width_cm: value === "" ? null : Math.max(0, Number(value || 0))
+      };
+    }
+    function setSkuDepthAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        depth_cm: value === "" ? null : Math.max(0, Number(value || 0))
+      };
+    }
+    function setSkuHeightAt(index, value) {
+      if (!currentEditingVariants[index]) return;
+      currentEditingVariants[index] = {
+        ...currentEditingVariants[index],
+        height_cm: value === "" ? null : Math.max(0, Number(value || 0))
+      };
+    }
+    function addSkuRow() {
+      currentEditingVariants = [
+        ...currentEditingVariants,
+        { variant_code: "", stock: 0, price: 0, width_cm: null, depth_cm: null, height_cm: null, color: null, size_label: null, material: null }
+      ];
+      syncSelectedImageVariantCode();
+      renderSkuRows();
+      renderImageVariantSelector();
+    }
+    function removeSkuRow(index) {
+      if (currentEditingVariants.length <= 1) return;
+      const removed = currentEditingVariants[index];
+      const removedCode = normalizeVariantCode(removed?.variant_code);
+      currentEditingVariants.splice(index, 1);
+      currentEditingVariants = [...currentEditingVariants];
+      if (removedCode) {
+        delete variantImageUrls[removedCode];
+      }
+      syncResolvedIdentityFromVariants();
+      syncSelectedImageVariantCode();
+      renderSkuRows();
+      renderImageVariantSelector();
+      renderPreview();
+      renderBarcodeHelper(
+        resolvedProductIdentity ? { vendor: resolvedProductIdentity.slice(0, 3), category: resolvedProductIdentity.slice(3, 5), productNo: resolvedProductIdentity.slice(5, 9), typeNo: "----", productIdentity: resolvedProductIdentity } : null,
+        resolvedProductIdentity ? { message: `目前編輯 product key ${resolvedProductIdentity}` } : {}
+      );
+    }
+    async function addSkuByBarcode() {
+      const barcode = String($("skuScanInput").value || "").trim();
+      if (!barcode) {
+        $("formStatus").textContent = "請先輸入 SKU 條碼";
+        return;
+      }
+      const result = await ensureProductMatchedByBarcode(barcode);
+      if (!result.parts || result.conflict) return;
+      const exists = currentEditingVariants.some((variant) => String(variant.variant_code || "").trim() === barcode);
+      if (!exists) {
+        currentEditingVariants = [
+          ...currentEditingVariants,
+          { variant_code: barcode, stock: 0, price: 0, width_cm: null, depth_cm: null, height_cm: null, color: null, size_label: null, material: null }
+        ];
+      }
+      syncResolvedIdentityFromVariants();
+      syncSelectedImageVariantCode();
+      renderSkuRows();
+      renderImageVariantSelector();
+      $("skuScanInput").value = "";
+      $("formStatus").textContent = exists ? "SKU 已存在，已切回該商品" : "SKU 已加入目前商品";
+    }
+    function productStatusBadge(statusValue) {
+      const normalized = normalizeStatus(statusValue);
+      if (normalized === "published") {
+        return { label: "已發佈", classes: "bg-tertiary-fixed text-tertiary" };
+      }
+      if (normalized === "archived") {
+        return { label: "已封存", classes: "bg-surface-container-high text-on-surface-variant" };
+      }
+      return { label: "草稿", classes: "bg-surface-container-high text-on-surface-variant" };
+    }
+    function stockState(stockValue) {
+      const value = Number(stockValue || 0);
+      if (value <= 0) {
+        return { label: "Out of stock", dot: "bg-error", text: "text-error" };
+      }
+      if (value <= 5) {
+        return { label: "Low stock", dot: "bg-amber-500", text: "text-amber-700" };
+      }
+      return { label: "In stock", dot: "bg-tertiary", text: "text-on-surface" };
+    }
+    function updateAuthUi() {
+      const loggedIn = !!currentUser;
+      const canManage = !!currentUser?.can_manage_products;
+      $("loginNotice").style.display = loggedIn && canManage ? "none" : "block";
+      if (!loggedIn) {
+        $("formStatus").textContent = "";
+        return;
+      }
+      if (!canManage) {
+        $("formStatus").textContent = "目前登入帳號角色是 customer，沒有商品管理權限。請重新用 preview admin 登入。";
+        return;
+      }
+      $("formStatus").textContent = "";
+    }
+    function displayProductKey(item) {
+      const name = String(item?.name || "").trim();
+      if (/^\d{9,13}$/.test(name)) return name.slice(0, 9);
+      const code = String(item?.product_code || "").trim();
+      return code || "-";
+    }
+    function renderProducts() {
+      const items = filteredProducts();
+      updateFilterTabs();
+      $("paginationInfo").textContent = `Showing ${items.length} products`;
+      if (!items.length) {
+        $("productsBody").innerHTML = `<tr><td colspan="7" class="px-6 py-16 text-center text-sm text-on-surface-variant">${products.length ? "查無符合搜尋條件的商品" : "目前還沒有商品"}</td></tr>`;
+        $("selectAll").checked = false;
+        return;
+      }
+      $("productsBody").innerHTML = items.map((item) => {
+        const status = productStatusBadge(item.status);
+        const stock = stockState(item.stock);
+        return `
+          <tr class="group transition-colors hover:bg-surface-container-low/30">
+            <td class="px-6 py-4">
+              <input type="checkbox" class="h-4 w-4 rounded border-outline-variant/50 text-primary focus:ring-primary/40" ${selectedIds.has(item.id) ? "checked" : ""} onchange="toggleSelection(${item.id}, this.checked)">
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-4">
+                <div class="h-14 w-14 overflow-hidden rounded-lg bg-surface-container">
+                  <img class="h-full w-full object-cover" src="${escapeHtml(item.cover_image_url || "")}" alt="${escapeHtml(item.name || "product")}">
+                </div>
+                <div>
+                  <div class="font-headline text-sm font-bold">Product #${escapeHtml(String(item.id))}</div>
+                  <div class="mt-0.5 text-xs font-medium text-on-surface-variant">共 ${escapeHtml(String(item.sku_count || 0))} 個 SKU</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm font-semibold text-on-surface">${escapeHtml(displayProductKey(item))}</div>
+              <div class="mt-0.5 text-xs text-on-surface-variant">${escapeHtml(String(item.sku_count || 0))} SKU variants</div>
+            </td>
+            <td class="px-6 py-4 text-sm font-bold">$${escapeHtml(String(item.min_price ?? 0))}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full ${stock.dot}"></span>
+                <span class="text-sm font-semibold ${stock.text}">總庫存 ${escapeHtml(String(item.stock ?? 0))}</span>
+              </div>
+              <div class="mt-1 text-xs text-on-surface-variant">${escapeHtml(stock.label)}</div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${status.classes}">${status.label}</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex justify-end gap-1 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100">
+                <button class="p-2 text-on-surface-variant hover:text-primary" title="Edit" onclick="editProduct(${item.id})">
+                  <span class="material-symbols-outlined text-lg">edit</span>
+                </button>
+                <button class="cursor-not-allowed p-2 text-on-surface-variant/40" title="後端未提供 duplicate API" disabled>
+                  <span class="material-symbols-outlined text-lg">content_copy</span>
+                </button>
+                <button class="p-2 text-on-surface-variant hover:text-error" title="Delete" onclick="deleteProduct(${item.id})">
+                  <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+      $("selectAll").checked = items.length > 0 && items.every((item) => selectedIds.has(item.id));
+    }
+    function toggleSelection(productId, checked) {
+      if (checked) selectedIds.add(productId);
+      else selectedIds.delete(productId);
+      $("selectAll").checked = filteredProducts().length > 0 && filteredProducts().every((item) => selectedIds.has(item.id));
+    }
+    function openEditorModal() { $("editorModal").classList.remove("hidden"); document.body.classList.add("overflow-hidden"); }
+    function closeEditorModal() { $("editorModal").classList.add("hidden"); document.body.classList.remove("overflow-hidden"); }
+    function resetForm() {
+      editingProductId = null;
+      variantImageUrls = {};
+      selectedImageVariantCode = "";
+      pendingImageFiles = [];
+      pendingImagePreviews = [];
+      $("formTitle").textContent = "New Product";
+      $("editorStatusSelect").value = "draft";
+      $("productName").value = "";
+      $("skuScanInput").value = "";
+      $("imageFiles").value = "";
+      $("formStatus").textContent = "";
+      currentEditingVariants = [];
+      resolvedProductIdentity = null;
+      renderImageVariantSelector();
+      renderPreview();
+      renderSkuRows();
+      renderBarcodeHelper(null);
+    }
+    function syncFileInput() {
+      const dataTransfer = new DataTransfer();
+      pendingImageFiles.forEach((file) => dataTransfer.items.add(file));
+      $("imageFiles").files = dataTransfer.files;
+    }
+    async function onFilesChange() {
+      const files = Array.from($("imageFiles").files || []);
+      const previews = await Promise.all(files.map((file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("image read failed"));
+        reader.readAsDataURL(file);
+      }))).catch(() => []);
+      pendingImageFiles = files;
+      pendingImagePreviews = previews;
+      renderPreview();
+    }
+    function moveExistingImage(index, direction) {
+      const images = selectedVariantImages();
+      const target = index + direction;
+      if (target < 0 || target >= images.length) return;
+      [images[index], images[target]] = [images[target], images[index]];
+      setSelectedVariantImages(images);
+      renderPreview();
+    }
+    function removeExistingImage(index) {
+      const images = selectedVariantImages();
+      images.splice(index, 1);
+      setSelectedVariantImages(images);
+      renderPreview();
+    }
+    function movePendingImage(index, direction) {
+      const target = index + direction;
+      if (target < 0 || target >= pendingImageFiles.length) return;
+      [pendingImageFiles[index], pendingImageFiles[target]] = [pendingImageFiles[target], pendingImageFiles[index]];
+      [pendingImagePreviews[index], pendingImagePreviews[target]] = [pendingImagePreviews[target], pendingImagePreviews[index]];
+      syncFileInput();
+      renderPreview();
+    }
+    function removePendingImage(index) {
+      pendingImageFiles.splice(index, 1);
+      pendingImagePreviews.splice(index, 1);
+      syncFileInput();
+      renderPreview();
+    }
+    function imageCard(item, globalIndex) {
+      const isExisting = item.kind === "existing";
+      const moveLeft = isExisting ? `moveExistingImage(${item.index}, -1)` : `movePendingImage(${item.index}, -1)`;
+      const moveRight = isExisting ? `moveExistingImage(${item.index}, 1)` : `movePendingImage(${item.index}, 1)`;
+      const remove = isExisting ? `removeExistingImage(${item.index})` : `removePendingImage(${item.index})`;
+      const atEnd = item.index === pendingImagePreviews.length - 1;
+      const existingImages = selectedVariantImages();
+      const existingEnd = item.index === existingImages.length - 1;
+      if (globalIndex === 0) {
+        return `
+          <div class="relative overflow-hidden rounded-lg bg-surface-container-highest sm:col-span-2">
+            <img class="h-60 w-full object-cover" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}">
+            <div class="absolute left-3 top-3 rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase text-white">主圖</div>
+            <div class="space-y-3 p-4">
+              <div class="text-sm font-semibold">${escapeHtml(item.label)}</div>
+              <div class="grid grid-cols-3 gap-2">
+                <button class="rounded-lg border border-outline-variant/30 px-3 py-2 text-xs font-semibold text-on-surface" onclick="${moveLeft}" ${item.index === 0 ? "disabled" : ""}>左移</button>
+                <button class="rounded-lg border border-outline-variant/30 px-3 py-2 text-xs font-semibold text-on-surface" onclick="${moveRight}" ${(isExisting ? existingEnd : atEnd) ? "disabled" : ""}>右移</button>
+                <button class="rounded-lg border border-outline-variant/30 px-3 py-2 text-xs font-semibold text-error" onclick="${remove}">移除</button>
+              </div>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="overflow-hidden rounded-lg bg-surface-container-highest">
+          <img class="aspect-square w-full object-cover" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}">
+          <div class="space-y-2 p-3">
+            <div class="truncate text-xs font-semibold">${escapeHtml(item.label)}</div>
+            <div class="grid grid-cols-3 gap-1">
+              <button class="rounded-lg border border-outline-variant/30 px-2 py-2 text-[11px] font-semibold text-on-surface" onclick="${moveLeft}" ${item.index === 0 ? "disabled" : ""}>左</button>
+              <button class="rounded-lg border border-outline-variant/30 px-2 py-2 text-[11px] font-semibold text-on-surface" onclick="${moveRight}" ${(isExisting ? existingEnd : atEnd) ? "disabled" : ""}>右</button>
+              <button class="rounded-lg border border-outline-variant/30 px-2 py-2 text-[11px] font-semibold text-error" onclick="${remove}">移除</button>
+            </div>
+          </div>
+        </div>`;
+    }
+    function renderPreview() {
+      renderImageVariantSelector();
+      const currentVariantCode = normalizeVariantCode(selectedImageVariantCode);
+      const items = [
+        ...selectedVariantImages().map((url, index) => ({ kind: "existing", url, index, label: `既有圖片 ${index + 1}` })),
+        ...pendingImagePreviews.map((url, index) => ({ kind: "pending", url, index, label: pendingImageFiles[index]?.name || `新圖片 ${index + 1}` }))
+      ];
+      $("imagePreview").innerHTML = items.length
+        ? items.map((item, index) => imageCard(item, index)).join("")
+        : `
+          <div class="col-span-full flex aspect-[4/3] items-center justify-center rounded-lg border-2 border-dashed border-outline-variant/30 bg-surface-container-highest p-8">
+            <div class="max-w-sm text-center">
+              <span class="material-symbols-outlined text-4xl text-on-surface-variant/40">imagesmode</span>
+              <div class="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-on-surface-variant">SKU Media</div>
+              <div class="mt-3 text-base font-semibold text-on-surface">${escapeHtml(currentVariantCode || "尚未選擇 SKU")}</div>
+              <div class="mt-2 text-sm text-on-surface-variant">${currentVariantCode ? "這個 SKU 目前沒有照片，請用右上角新增圖片上傳。" : "請先選擇 SKU，再為該 SKU 上傳照片。"}</div>
+            </div>
+          </div>`;
+    }
+    async function uploadImages() {
+      if (!pendingImageFiles.length) return [];
+      const files = await Promise.all(pendingImageFiles.map((file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name: file.name, content_type: file.type || "application/octet-stream", data_url: reader.result });
+        reader.onerror = () => reject(new Error("image read failed"));
+        reader.readAsDataURL(file);
+      })));
+      const res = await apiFetch(`${API_PREFIX}/admin/uploads/product-images`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || `圖片上傳失敗 (${res.status})`);
+      return Array.isArray(data.items) ? data.items.map((item) => item.url).filter(Boolean) : [];
+    }
+    async function saveProduct(nextStatus = "published") {
+      if (!currentUser || !currentUser.can_manage_products) {
+        $("formStatus").textContent = "目前帳號沒有商品管理權限";
+        return;
+      }
+      if (!currentEditingVariants.length) {
+        $("formStatus").textContent = "請至少加入一筆 SKU";
+        return;
+      }
+      const parsedVariants = currentEditingVariants.map((variant, index) => ({
+        index,
+        variant,
+        parts: parseBarcodeParts(String(variant.variant_code || "").trim())
+      }));
+      const invalidVariant = parsedVariants.find((item) => !item.parts);
+      if (invalidVariant) {
+        $("formStatus").textContent = `第 ${invalidVariant.index + 1} 筆 SKU 條碼格式錯誤，需為 13 碼數字`;
+        return;
+      }
+      const firstIdentity = parsedVariants[0].parts.productIdentity;
+      const conflictVariant = parsedVariants.find((item) => item.parts.productIdentity !== firstIdentity);
+      if (conflictVariant) {
+        $("formStatus").textContent = `第 ${conflictVariant.index + 1} 筆 SKU 不屬於目前 product key ${firstIdentity}`;
+        return;
+      }
+      const preservedPendingImageFiles = [...pendingImageFiles];
+      const preservedPendingImagePreviews = [...pendingImagePreviews];
+      const preservedSelectedImageVariantCode = selectedImageVariantCode;
+      if (!editingProductId) {
+        const preflight = await ensureProductMatchedByBarcode(parsedVariants[0].parts.raw);
+        pendingImageFiles = preservedPendingImageFiles;
+        pendingImagePreviews = preservedPendingImagePreviews;
+        selectedImageVariantCode = preservedSelectedImageVariantCode || parsedVariants[0].parts.raw;
+        syncFileInput();
+        renderPreview();
+        if (preflight.matched && preflight.productId) {
+          const nextExists = currentEditingVariants.some((variant) => String(variant.variant_code || "").trim() === parsedVariants[0].parts.raw);
+          if (!nextExists) {
+            currentEditingVariants = [
+              ...currentEditingVariants,
+              {
+                variant_code: parsedVariants[0].parts.raw,
+                stock: Math.max(0, Number(parsedVariants[0].variant.stock || 0)),
+                price: Math.max(0, Number(parsedVariants[0].variant.price || 0)),
+                width_cm: parsedVariants[0].variant.width_cm ?? null,
+                depth_cm: parsedVariants[0].variant.depth_cm ?? null,
+                height_cm: parsedVariants[0].variant.height_cm ?? null,
+                color: parsedVariants[0].variant.color ?? null,
+                size_label: parsedVariants[0].variant.size_label ?? null,
+                material: parsedVariants[0].variant.material ?? null
+              }
+            ];
+            renderSkuRows();
+            renderImageVariantSelector();
+          }
+        }
+      }
+      resolvedProductIdentity = firstIdentity;
+      $("formStatus").textContent = "儲存中...";
+      let uploaded = [];
+      try {
+        uploaded = await uploadImages();
+      } catch (error) {
+        $("formStatus").textContent = error && error.message ? error.message : "圖片上傳失敗";
+        return;
+      }
+      const payload = {
+        name: String($("productName").value || "").trim() || resolvedProductIdentity,
+        status: normalizeStatus($("editorStatusSelect").value || nextStatus),
+        description: null,
+        image_urls: [],
+        variant_images: buildVariantImagesPayload().map((entry) => ({
+          variant_code: entry.variant_code,
+          image_urls: entry.variant_code === selectedImageVariantCode
+            ? [...entry.image_urls, ...uploaded]
+            : entry.image_urls,
+        })),
+        variants: currentEditingVariants.map((variant) => ({
+          id: variant.id || undefined,
+          variant_code: String(variant.variant_code || "").trim() || null,
+          color: variant.color ?? null,
+          size_label: variant.size_label ?? null,
+          material: variant.material ?? null,
+          price: Math.max(0, Number(variant.price || 0)),
+          stock: Math.max(0, Number(variant.stock || 0)),
+          width_cm: variant.width_cm == null || variant.width_cm === "" ? null : Math.max(0, Number(variant.width_cm || 0)),
+          depth_cm: variant.depth_cm == null || variant.depth_cm === "" ? null : Math.max(0, Number(variant.depth_cm || 0)),
+          height_cm: variant.height_cm == null || variant.height_cm === "" ? null : Math.max(0, Number(variant.height_cm || 0))
+        }))
+      };
+      const path = editingProductId ? `${API_PREFIX}/admin/products/${editingProductId}` : `${API_PREFIX}/admin/products`;
+      const method = editingProductId ? "PATCH" : "POST";
+      const isEditing = !!editingProductId;
+      const res = await apiFetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        $("formStatus").textContent = data.detail || `儲存失敗 (${res.status})`;
+        return;
+      }
+      $("formStatus").textContent = isEditing ? "商品已更新" : "商品已建立";
+      await loadProducts();
+      setTimeout(() => {
+        closeEditorModal();
+        resetForm();
+      }, 400);
+    }
+    async function editProduct(productId) {
+      const summary = products.find((item) => item.id === productId) || null;
+      const res = await apiFetch(`${API_PREFIX}/admin/products/${productId}`);
+      if (!res.ok) {
+        alert("商品詳細資料載入失敗");
+        return;
+      }
+      const product = await res.json();
+      applyProductToEditor(product, { message: `已載入商品 #${product.id}` });
+      $("editorStatusSelect").value = normalizeStatus(product.status);
+      $("productName").value = product.name ?? "";
+      $("skuScanInput").value = "";
+      $("formStatus").textContent = "已載入商品，可直接修改";
+      openEditorModal();
+    }
+    async function deleteProduct(productId) {
+      const item = products.find((entry) => entry.id === productId) || null;
+      const label = item ? `Product #${item.id} / ${displayProductKey(item)}` : `Product #${productId}`;
+      if (!window.confirm(`確定要刪除 ${label} 嗎？`)) {
+        return;
+      }
+      const res = await apiFetch(`${API_PREFIX}/admin/products/${productId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.detail || `刪除失敗 (${res.status})`);
+        return;
+      }
+      if (editingProductId === productId) {
+        closeEditorModal();
+        resetForm();
+      }
+      await loadProducts();
+      $("formStatus").textContent = `${label} 已刪除`;
+    }
+    async function loadProducts() {
+      if (!currentUser || !currentUser.can_manage_products) return;
+      const res = await apiFetch(`${API_PREFIX}/admin/products`);
+      const data = await res.json().catch(() => ({ items: [] }));
+      products = res.ok && Array.isArray(data.items) ? data.items : [];
+      selectedIds = new Set([...selectedIds].filter((id) => products.some((item) => item.id === id)));
+      renderProducts();
+    }
+    async function initAuth() {
+      if (!authToken) { currentUser = null; updateAuthUi(); return; }
+      try {
+        const res = await apiFetch(`${API_PREFIX}/auth/me`);
+        if (!res.ok) throw new Error("auth expired");
+        currentUser = await res.json();
+      } catch {
+        authToken = "";
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        currentUser = null;
+      }
+      updateAuthUi();
+      if (currentUser && currentUser.can_manage_products) await loadProducts();
+    }
+    async function startLocalLogin() {
+      const res = await fetch(`${API_PREFIX}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({})
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { alert(data.detail || "登入失敗"); return; }
+      authToken = data.token || "";
+      if (authToken) localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+      await initAuth();
+    }
+    function startOAuth(provider) { window.location.href = `${API_PREFIX}/auth/${provider}/start`; }
+    async function logout() {
+      try { await apiFetch(`${API_PREFIX}/auth/logout`, { method: "POST" }); } catch {}
+      authToken = "";
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      currentUser = null;
+      products = [];
+      selectedIds = new Set();
+      searchKeyword = "";
+      currentEditingVariants = [];
+      $("searchInput") && ($("searchInput").value = "");
+      resetForm();
+      renderProducts();
+      updateAuthUi();
+    }
+    function handleAuthAction() { if (currentUser) logout(); else startLocalLogin(); }
+    function consumeTokenFromUrl() {
+      const url = new URL(window.location.href);
+      const hashParams = new URLSearchParams((url.hash || "").replace(/^#/, ""));
+      const token = url.searchParams.get("token") || hashParams.get("token");
+      if (!token) return;
+      authToken = token;
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      url.searchParams.delete("token");
+      url.searchParams.delete("provider");
+      url.hash = "";
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+
+    window.toggleSelection = toggleSelection;
+    window.editProduct = editProduct;
+    window.moveExistingImage = moveExistingImage;
+    window.removeExistingImage = removeExistingImage;
+    window.movePendingImage = movePendingImage;
+    window.removePendingImage = removePendingImage;
+    window.setSkuBarcodeAt = setSkuBarcodeAt;
+    window.setSkuStockAt = setSkuStockAt;
+    window.setSkuPriceAt = setSkuPriceAt;
+    window.setSkuWidthAt = setSkuWidthAt;
+    window.setSkuDepthAt = setSkuDepthAt;
+    window.setSkuHeightAt = setSkuHeightAt;
+    window.removeSkuRow = removeSkuRow;
+    window.deleteProduct = deleteProduct;
+    $("localLoginBtn").addEventListener("click", startLocalLogin);
+    $("lineLoginBtn").addEventListener("click", () => startOAuth("line"));
+    $("googleLoginBtn").addEventListener("click", () => startOAuth("google"));
+    $("refreshBtn")?.addEventListener("click", loadProducts);
+    $("openCreateBtn").addEventListener("click", () => { resetForm(); openEditorModal(); });
+    $("openCreateBtnTop").addEventListener("click", () => { resetForm(); openEditorModal(); });
+    $("closeModalBtn").addEventListener("click", closeEditorModal);
+    $("resetBtn").addEventListener("click", resetForm);
+    $("addSkuRowBtn").addEventListener("click", addSkuRow);
+    $("addSkuByBarcodeBtn").addEventListener("click", addSkuByBarcode);
+    $("saveBtnTop").addEventListener("click", () => {
+      $("editorStatusSelect").value = "published";
+      saveProduct("published");
+    });
+    $("saveDraftBtnTop").addEventListener("click", () => {
+      $("editorStatusSelect").value = "draft";
+      saveProduct("draft");
+    });
+    $("imageFiles").addEventListener("change", onFilesChange);
+    $("imageVariantSelect").addEventListener("change", (event) => {
+      selectedImageVariantCode = normalizeVariantCode(event.target.value);
+      pendingImageFiles = [];
+      pendingImagePreviews = [];
+      $("imageFiles").value = "";
+      renderPreview();
+    });
+    $("searchInput")?.addEventListener("input", (event) => {
+      searchKeyword = String(event.target.value || "").trim();
+      renderProducts();
+    });
+    $("filterAllBtn").addEventListener("click", () => { listFilterStatus = "all"; renderProducts(); });
+    $("filterPublishedBtn").addEventListener("click", () => { listFilterStatus = "published"; renderProducts(); });
+    $("filterDraftBtn").addEventListener("click", () => { listFilterStatus = "draft"; renderProducts(); });
+    $("skuScanInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addSkuByBarcode();
+      }
+    });
+    $("selectAll").addEventListener("change", (event) => {
+      const checked = !!event.target.checked;
+      selectedIds = checked ? new Set(filteredProducts().map((item) => item.id)) : new Set();
+      renderProducts();
+    });
+    $("editorModal").addEventListener("click", (event) => {
+      if (event.target === $("editorModal")) closeEditorModal();
+    });
+
+    consumeTokenFromUrl();
+    resetForm();
+    renderProducts();
+    initAuth();
+  </script>
+</body>
+</html>

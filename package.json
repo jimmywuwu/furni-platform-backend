@@ -9,8 +9,10 @@
     "dev:production": "XDG_CONFIG_HOME=./.run/config wrangler dev --local --env production --port 8000",
     "typecheck": "tsc --noEmit",
     "db:schema:local": "XDG_CONFIG_HOME=./.run/config wrangler d1 execute furni-platform --local --file=./deploy/cloudflare/schema.sql",
+    "db:migrate:ai:local": "XDG_CONFIG_HOME=./.run/config wrangler d1 execute furni-platform --local --file=./deploy/cloudflare/migrations/001_product_ai_metadata.sql",
     "db:seed:local": "XDG_CONFIG_HOME=./.run/config wrangler d1 execute furni-platform --local --file=./deploy/cloudflare/seed.sql",
     "db:reset:local": "npm run db:schema:local && npm run db:seed:local",
+    "build:import:sql": "node scripts/build_product_import_sql.mjs",
     "test": "bash ./scripts/test_smoke.sh",
     "deploy:preview": "wrangler deploy --env preview",
     "deploy:production": "wrangler deploy --env production"

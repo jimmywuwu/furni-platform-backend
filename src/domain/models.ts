@@ -1,3 +1,5 @@
+export type ProductStatus = "draft" | "published" | "archived";
+
 export type FeedItem = {
   type: "product";
   id: number;
@@ -26,6 +28,9 @@ export type ProductVariant = {
   material: string | null;
   price: number;
   stock: number;
+  widthCm: number | null;
+  depthCm: number | null;
+  heightCm: number | null;
 };
 
 export type ProductImage = {
@@ -41,13 +46,33 @@ export type Product = {
   id: number;
   productCode: string;
   name: string;
+  status: ProductStatus;
   brand: string | null;
   category: string | null;
   categorySlug: string | null;
   description: string | null;
   coverImageUrl: string | null;
+  widthCm?: number | null;
+  depthCm?: number | null;
+  heightCm?: number | null;
   variants: ProductVariant[];
   images: ProductImage[];
+};
+
+export type AdminProductSummary = {
+  id: number;
+  productCode: string;
+  name: string;
+  status: ProductStatus;
+  coverImageUrl: string | null;
+  widthCm: number | null;
+  depthCm: number | null;
+  heightCm: number | null;
+  stock: number;
+  skuCount: number;
+  minPrice: number | null;
+  primaryVariantId: number | null;
+  createdAt: string | null;
 };
 
 export type User = {

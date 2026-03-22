@@ -5,6 +5,11 @@ compatibility_date = "2026-03-15"
 [vars]
 AUTH_PROVIDERS = "local,line,google"
 LOCAL_AUTH_MODE = "form"
+PRODUCT_IMAGE_BASE_URL = "https://img.davidfield.com.tw"
+
+[[r2_buckets]]
+binding = "PRODUCT_IMAGES"
+bucket_name = "furni-images"
 
 [[d1_databases]]
 binding = "DB"
@@ -26,6 +31,11 @@ AUTH_PROVIDERS = "local"
 LOCAL_AUTH_MODE = "fixed_admin"
 PREVIEW_ADMIN_DISPLAY_NAME = "Preview Admin"
 PREVIEW_ADMIN_EMAIL = "preview-admin@davidfield.com.tw"
+PRODUCT_IMAGE_BASE_URL = "https://img.davidfield.com.tw"
+
+[[env.preview.r2_buckets]]
+binding = "PRODUCT_IMAGES"
+bucket_name = "furni-images"
 
 [[env.preview.d1_databases]]
 binding = "DB"
@@ -46,6 +56,11 @@ LINE_CLIENT_ID = "2009445563"
 LINE_REDIRECT_URI = "https://shop.davidfield.com.tw/api/v1/auth/line/callback"
 GOOGLE_CLIENT_ID = "7560189269-6rpm5f0ip5jvijiljkopdjsfnqauc2mi.apps.googleusercontent.com"
 GOOGLE_REDIRECT_URI = "https://shop.davidfield.com.tw/api/v1/auth/google/callback"
+PRODUCT_IMAGE_BASE_URL = "https://img.davidfield.com.tw"
+
+[[env.production.r2_buckets]]
+binding = "PRODUCT_IMAGES"
+bucket_name = "furni-images"
 
 [[env.production.d1_databases]]
 binding = "DB"

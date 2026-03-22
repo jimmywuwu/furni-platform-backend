@@ -1,4 +1,5 @@
 import type {
+  AdminProductSummary,
   AuthSession,
   Category,
   Collection,
@@ -63,6 +64,56 @@ export type CreateViewlistItemInput = {
   note: string | null;
 };
 
+export type AdminVariantInput = {
+  id?: number;
+  variantCode?: string | null;
+  color?: string | null;
+  sizeLabel?: string | null;
+  material?: string | null;
+  price: number;
+  stock: number;
+  widthCm?: number | null;
+  depthCm?: number | null;
+  heightCm?: number | null;
+};
+
+export type CreateAdminProductInput = {
+  name: string;
+  status?: "draft" | "published" | "archived";
+  description: string | null;
+  widthCm: number | null;
+  depthCm: number | null;
+  heightCm: number | null;
+  imageUrls: string[];
+  variantImages?: Array<{
+    variantCode: string;
+    imageUrls: string[];
+  }>;
+  variants: AdminVariantInput[];
+};
+
+export type UpdateAdminProductInput = {
+  name?: string;
+  status?: "draft" | "published" | "archived";
+  description?: string | null;
+  widthCm?: number | null;
+  depthCm?: number | null;
+  heightCm?: number | null;
+  imageUrls?: string[];
+  variantImages?: Array<{
+    variantCode: string;
+    imageUrls: string[];
+  }>;
+  variants?: AdminVariantInput[];
+};
+
+export type BatchUpdateAdminProductsInput = {
+  productIds: number[];
+  widthCm?: number | null;
+  depthCm?: number | null;
+  heightCm?: number | null;
+};
+
 export interface CatalogRepository {
   listFeedRows(): Promise<Array<{ slotType: string; item: FeedItem; categorySlug: string | null }>>;
   listCategories(): Promise<Category[]>;
@@ -72,6 +123,14 @@ export interface CatalogRepository {
   listDiscountProducts(limit: number): Promise<FeedItem[]>;
   productExists(productId: number): Promise<boolean>;
   variantExists(variantId: number): Promise<boolean>;
+}
+
+export interface AdminProductRepository {
+  listAdminProducts(): Promise<AdminProductSummary[]>;
+  createAdminProduct(input: CreateAdminProductInput): Promise<number>;
+  updateAdminProduct(productId: number, input: UpdateAdminProductInput): Promise<void>;
+  deleteAdminProduct(productId: number): Promise<void>;
+  batchUpdateAdminProducts(input: BatchUpdateAdminProductsInput): Promise<number>;
 }
 
 export interface UserRepository {
@@ -133,6 +192,7 @@ export interface AuthRepository {
 
 export interface RepositoryFactory {
   catalog: CatalogRepository;
+  adminProducts: AdminProductRepository;
   users: UserRepository;
   stores: StoreRepository;
   collections: CollectionRepository;

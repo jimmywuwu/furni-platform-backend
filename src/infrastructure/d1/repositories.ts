@@ -1,7 +1,11 @@
 import type {
+  AdminVariantInput,
+  AdminProductRepository,
   AuthRepository,
+  BatchUpdateAdminProductsInput,
   CatalogRepository,
   CollectionRepository,
+  CreateAdminProductInput,
   CreateCollectionCommentInput,
   CreateCollectionImageInput,
   CreateCollectionInput,
@@ -15,6 +19,7 @@ import type {
   WishlistRepository,
 } from "../../domain/ports";
 import type {
+  AdminProductSummary,
   AuthSession,
   Category,
   Collection,
@@ -25,6 +30,7 @@ import type {
   HighlightSection,
   OAuthIdentity,
   Product,
+  ProductStatus,
   ProductImage,
   ProductVariant,
   Store,
@@ -66,6 +72,14 @@ function mapFeedItem(row: FeedRow): FeedItem {
   };
 }
 
+function normalizeProductStatus(value: unknown): ProductStatus {
+  const status = toText(value)?.trim().toLowerCase();
+  if (status === "published" || status === "archived") {
+    return status;
+  }
+  return "draft";
+}
+
 export class D1CatalogRepository implements CatalogRepository {
   constructor(private readonly client: D1Client) {}
 
@@ -85,6 +99,7 @@ export class D1CatalogRepository implements CatalogRepository {
         FROM feed_slots fs
         LEFT JOIN products p ON p.id = fs.ref_id
         LEFT JOIN categories cat ON cat.id = p.category_id
+        WHERE fs.slot_type != 'product' OR (p.id IS NOT NULL AND p.status = 'published')
         ORDER BY fs.position ASC
       `,
     );
@@ -122,7 +137,8 @@ export class D1CatalogRepository implements CatalogRepository {
     const product = await this.client.first<Record<string, unknown>>(
       `
         SELECT p.id, p.product_code, p.name, p.brand, p.category,
-               cat.slug AS category_slug, p.description, p.cover_image_url
+               p.status, cat.slug AS category_slug, p.description, p.cover_image_url,
+               p.width_cm, p.depth_cm, p.height_cm
         FROM products p
         LEFT JOIN categories cat ON cat.id = p.category_id
         WHERE p.id = ?
@@ -136,7 +152,8 @@ export class D1CatalogRepository implements CatalogRepository {
 
     const variants = await this.client.all<Record<string, unknown>>(
       `
-        SELECT id, product_id, variant_code, color, size_label, material, price, stock
+        SELECT id, product_id, variant_code, color, size_label, material, price, stock,
+               width_cm, depth_cm, height_cm
         FROM product_variants
         WHERE product_id = ?
         ORDER BY id ASC
@@ -158,11 +175,15 @@ export class D1CatalogRepository implements CatalogRepository {
       id: toNumber(product.id) ?? 0,
       productCode: toText(product.product_code) ?? "",
       name: toText(product.name) ?? "",
+      status: normalizeProductStatus(product.status),
       brand: toText(product.brand),
       category: toText(product.category),
       categorySlug: toText(product.category_slug),
       description: toText(product.description),
       coverImageUrl: toText(product.cover_image_url),
+      widthCm: toNumber(product.width_cm),
+      depthCm: toNumber(product.depth_cm),
+      heightCm: toNumber(product.height_cm),
       variants: variants.map<ProductVariant>((variant) => ({
         id: toNumber(variant.id) ?? 0,
         productId: toNumber(variant.product_id) ?? 0,
@@ -172,6 +193,9 @@ export class D1CatalogRepository implements CatalogRepository {
         material: toText(variant.material),
         price: toNumber(variant.price) ?? 0,
         stock: toNumber(variant.stock) ?? 0,
+        widthCm: toNumber(variant.width_cm),
+        depthCm: toNumber(variant.depth_cm),
+        heightCm: toNumber(variant.height_cm),
       })),
       images: images.map<ProductImage>((image) => ({
         id: toNumber(image.id) ?? 0,
@@ -200,6 +224,7 @@ export class D1CatalogRepository implements CatalogRepository {
         FROM highlight_products hp
         JOIN products p ON p.id = hp.product_id
         WHERE hp.section = ?
+          AND p.status = 'published'
         ORDER BY hp.position ASC, hp.id ASC
         LIMIT ?
       `,
@@ -223,6 +248,7 @@ export class D1CatalogRepository implements CatalogRepository {
                  WHERE pv.product_id = p.id
                ) AS min_price
         FROM products p
+        WHERE p.status = 'published'
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT ?
       `,
@@ -246,6 +272,7 @@ export class D1CatalogRepository implements CatalogRepository {
           FROM product_variants
           GROUP BY product_id
         ) x ON x.product_id = p.id
+        WHERE p.status = 'published'
         ORDER BY x.min_price ASC, p.created_at DESC, p.id DESC
         LIMIT ?
       `,
@@ -268,6 +295,462 @@ export class D1CatalogRepository implements CatalogRepository {
       variantId,
     );
     return row !== null;
+  }
+}
+
+function buildProductCode() {
+  return `P-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+}
+
+function buildVariantCode(productCode: string) {
+  return `${productCode}-DEFAULT`;
+}
+
+function buildIndexedVariantCode(productCode: string, index: number) {
+  return `${productCode}-SKU${String(index + 1).padStart(2, "0")}`;
+}
+
+export class D1AdminProductRepository implements AdminProductRepository {
+  constructor(private readonly client: D1Client) {}
+
+  private async syncProductDimensionsFromPrimaryVariant(productId: number): Promise<void> {
+    const primaryVariant = await this.client.first<Record<string, unknown>>(
+      `
+        SELECT width_cm, depth_cm, height_cm
+        FROM product_variants
+        WHERE product_id = ?
+        ORDER BY id ASC
+        LIMIT 1
+      `,
+      productId,
+    );
+    await this.client.run(
+      `
+        UPDATE products
+        SET width_cm = ?, depth_cm = ?, height_cm = ?
+        WHERE id = ?
+      `,
+      toNumber(primaryVariant?.width_cm),
+      toNumber(primaryVariant?.depth_cm),
+      toNumber(primaryVariant?.height_cm),
+      productId,
+    );
+  }
+
+  private async syncVariantImages(
+    productId: number,
+    variantImages: Array<{ variantCode: string; imageUrls: string[] }>,
+  ): Promise<string | null> {
+    await this.client.run("DELETE FROM product_images WHERE product_id = ?", productId);
+    if (!variantImages.length) {
+      return null;
+    }
+
+    const variants = await this.client.all<Record<string, unknown>>(
+      "SELECT id, variant_code FROM product_variants WHERE product_id = ? ORDER BY id ASC",
+      productId,
+    );
+    const variantIdByCode = new Map<string, number>();
+    const orderedVariantCodes: string[] = [];
+    for (const row of variants) {
+      const variantCode = toText(row.variant_code)?.trim();
+      const variantId = toNumber(row.id);
+      if (variantCode && variantId !== null) {
+        variantIdByCode.set(variantCode, variantId);
+        orderedVariantCodes.push(variantCode);
+      }
+    }
+
+    const statements: Array<{ sql: string; params?: Array<string | number | null> }> = [];
+    for (const entry of variantImages) {
+      const variantCode = entry.variantCode.trim();
+      const variantId = variantIdByCode.get(variantCode);
+      if (!variantId) {
+        continue;
+      }
+      for (const [index, url] of entry.imageUrls.entries()) {
+        statements.push({
+          sql: `
+            INSERT INTO product_images (product_id, variant_id, image_url, image_type, position)
+            VALUES (?, ?, ?, 'gallery', ?)
+          `,
+          params: [productId, variantId, url, index],
+        });
+      }
+    }
+
+    if (statements.length) {
+      await this.client.batch(statements);
+    }
+    const firstVariantCode = orderedVariantCodes[0] ?? null;
+    if (!firstVariantCode) {
+      return null;
+    }
+    const firstVariantImages = variantImages.find((entry) => entry.variantCode.trim() === firstVariantCode)?.imageUrls ?? [];
+    return firstVariantImages[0] ?? null;
+  }
+
+  async listAdminProducts(): Promise<AdminProductSummary[]> {
+    const rows = await this.client.all<Record<string, unknown>>(
+      `
+        SELECT p.id,
+               p.product_code,
+               p.name,
+               p.status,
+               p.cover_image_url,
+               p.width_cm,
+               p.depth_cm,
+               p.height_cm,
+               p.created_at,
+               COALESCE((
+                 SELECT COUNT(*)
+                 FROM product_variants pv
+                 WHERE pv.product_id = p.id
+               ), 0) AS sku_count,
+               (
+                 SELECT MIN(pv.price)
+                 FROM product_variants pv
+                 WHERE pv.product_id = p.id
+               ) AS min_price,
+               (
+                 SELECT pv.id
+                 FROM product_variants pv
+                 WHERE pv.product_id = p.id
+                 ORDER BY pv.id ASC
+                 LIMIT 1
+               ) AS primary_variant_id,
+               COALESCE((
+                 SELECT SUM(pv.stock)
+                 FROM product_variants pv
+                 WHERE pv.product_id = p.id
+               ), 0) AS stock
+        FROM products p
+        ORDER BY p.created_at DESC, p.id DESC
+      `,
+    );
+    return rows.map((row) => ({
+      id: toNumber(row.id) ?? 0,
+      productCode: toText(row.product_code) ?? "",
+      name: toText(row.name) ?? "",
+      status: normalizeProductStatus(row.status),
+      coverImageUrl: toText(row.cover_image_url),
+      widthCm: toNumber(row.width_cm),
+      depthCm: toNumber(row.depth_cm),
+      heightCm: toNumber(row.height_cm),
+      stock: toNumber(row.stock) ?? 0,
+      skuCount: toNumber(row.sku_count) ?? 0,
+      minPrice: toNumber(row.min_price),
+      primaryVariantId: toNumber(row.primary_variant_id),
+      createdAt: toText(row.created_at),
+    }));
+  }
+
+  async createAdminProduct(input: CreateAdminProductInput): Promise<number> {
+    const productCode = buildProductCode();
+    const result = await this.client.run(
+      `
+        INSERT INTO products (
+          product_code, name, status, description, cover_image_url, width_cm, depth_cm, height_cm
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      productCode,
+      input.name.trim(),
+      input.status ?? "draft",
+      input.description,
+      null,
+      input.variants[0]?.widthCm ?? input.widthCm ?? null,
+      input.variants[0]?.depthCm ?? input.depthCm ?? null,
+      input.variants[0]?.heightCm ?? input.heightCm ?? null,
+    );
+    const productId = lastRowId(result);
+
+    for (const [index, variant] of input.variants.entries()) {
+      await this.client.run(
+        `
+          INSERT INTO product_variants (
+            product_id, variant_code, color, size_label, material, price, stock, width_cm, depth_cm, height_cm
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        productId,
+        variant.variantCode?.trim() || buildIndexedVariantCode(productCode, index),
+        variant.color ?? null,
+        variant.sizeLabel ?? null,
+        variant.material ?? null,
+        variant.price,
+        variant.stock,
+        variant.widthCm ?? null,
+        variant.depthCm ?? null,
+        variant.heightCm ?? null,
+      );
+    }
+
+    const coverImageUrl = input.variantImages
+      ? await this.syncVariantImages(productId, input.variantImages)
+      : input.imageUrls[0] ?? null;
+    if (coverImageUrl !== null) {
+      await this.client.run(
+        "UPDATE products SET cover_image_url = ? WHERE id = ?",
+        coverImageUrl,
+        productId,
+      );
+    }
+    await this.syncProductDimensionsFromPrimaryVariant(productId);
+
+    return productId;
+  }
+
+  async updateAdminProduct(productId: number, input: {
+    name?: string;
+    status?: ProductStatus;
+    description?: string | null;
+    widthCm?: number | null;
+    depthCm?: number | null;
+    heightCm?: number | null;
+    imageUrls?: string[];
+    variantImages?: Array<{ variantCode: string; imageUrls: string[] }>;
+    variants?: AdminVariantInput[];
+  }): Promise<void> {
+    const current = await this.client.first<Record<string, unknown>>(
+      `
+        SELECT id, product_code, name, description, cover_image_url, width_cm, depth_cm, height_cm
+               , status
+        FROM products
+        WHERE id = ?
+        LIMIT 1
+      `,
+      productId,
+    );
+    if (!current) {
+      throw new Error("Product not found");
+    }
+
+    const productCode = toText(current.product_code) ?? "";
+
+    await this.client.run(
+      `
+        UPDATE products
+        SET name = ?, status = ?, description = ?, width_cm = ?, depth_cm = ?, height_cm = ?, cover_image_url = ?
+        WHERE id = ?
+      `,
+      input.name?.trim() ?? (toText(current.name) ?? ""),
+      input.status !== undefined ? input.status : normalizeProductStatus(current.status),
+      input.description !== undefined ? input.description : toText(current.description),
+      input.widthCm !== undefined ? input.widthCm : toNumber(current.width_cm),
+      input.depthCm !== undefined ? input.depthCm : toNumber(current.depth_cm),
+      input.heightCm !== undefined ? input.heightCm : toNumber(current.height_cm),
+      input.imageUrls ? (input.imageUrls[0] ?? null) : toText(current.cover_image_url),
+      productId,
+    );
+
+    if (input.variants) {
+      const currentVariants = await this.client.all<Record<string, unknown>>(
+        "SELECT id FROM product_variants WHERE product_id = ? ORDER BY id ASC",
+        productId,
+      );
+      const existingIds = new Set(currentVariants.map((row) => toNumber(row.id)).filter((id): id is number => id !== null));
+      const incomingIds = new Set(
+        input.variants
+          .map((variant) => variant.id)
+          .filter((id): id is number => typeof id === "number" && existingIds.has(id)),
+      );
+      const idsToDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+
+      if (idsToDelete.length) {
+        const refs = await this.client.first<Record<string, unknown>>(
+          `
+            SELECT
+              (SELECT COUNT(*) FROM collection_items WHERE variant_id IN (${idsToDelete.map(() => "?").join(",")})) AS collection_refs,
+              (SELECT COUNT(*) FROM viewlist_items WHERE variant_id IN (${idsToDelete.map(() => "?").join(",")})) AS viewlist_refs
+          `,
+          ...idsToDelete,
+          ...idsToDelete,
+        );
+        const collectionRefs = toNumber(refs?.collection_refs) ?? 0;
+        const viewlistRefs = toNumber(refs?.viewlist_refs) ?? 0;
+        if (collectionRefs > 0 || viewlistRefs > 0) {
+          throw new Error("Some SKUs are already referenced and cannot be deleted");
+        }
+      }
+
+      const statements: Array<{ sql: string; params?: Array<string | number | null> }> = [];
+      for (const [index, variant] of input.variants.entries()) {
+        const variantCode = variant.variantCode?.trim() || buildIndexedVariantCode(productCode || `P${productId}`, index);
+        if (typeof variant.id === "number" && existingIds.has(variant.id)) {
+          statements.push({
+            sql: `
+              UPDATE product_variants
+              SET variant_code = ?, color = ?, size_label = ?, material = ?, price = ?, stock = ?, width_cm = ?, depth_cm = ?, height_cm = ?
+              WHERE id = ? AND product_id = ?
+            `,
+            params: [
+              variantCode,
+              variant.color ?? null,
+              variant.sizeLabel ?? null,
+              variant.material ?? null,
+              variant.price,
+              variant.stock,
+              variant.widthCm ?? null,
+              variant.depthCm ?? null,
+              variant.heightCm ?? null,
+              variant.id,
+              productId,
+            ],
+          });
+        } else {
+          statements.push({
+            sql: `
+              INSERT INTO product_variants (
+                product_id, variant_code, color, size_label, material, price, stock, width_cm, depth_cm, height_cm
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            params: [
+              productId,
+              variantCode,
+              variant.color ?? null,
+              variant.sizeLabel ?? null,
+              variant.material ?? null,
+              variant.price,
+              variant.stock,
+              variant.widthCm ?? null,
+              variant.depthCm ?? null,
+              variant.heightCm ?? null,
+            ],
+          });
+        }
+      }
+      for (const id of idsToDelete) {
+        statements.push({
+          sql: "DELETE FROM product_variants WHERE id = ? AND product_id = ?",
+          params: [id, productId],
+        });
+      }
+      if (statements.length) {
+        await this.client.batch(statements);
+      }
+      await this.syncProductDimensionsFromPrimaryVariant(productId);
+    }
+
+    if (input.variantImages) {
+      const coverImageUrl = await this.syncVariantImages(productId, input.variantImages);
+      await this.client.run(
+        "UPDATE products SET cover_image_url = ? WHERE id = ?",
+        coverImageUrl,
+        productId,
+      );
+    } else if (input.imageUrls) {
+      await this.client.run("DELETE FROM product_images WHERE product_id = ?", productId);
+      if (input.imageUrls.length) {
+        const currentVariants = await this.client.all<Record<string, unknown>>(
+          "SELECT id FROM product_variants WHERE product_id = ? ORDER BY id ASC",
+          productId,
+        );
+        const firstVariantId = toNumber(currentVariants[0]?.id);
+        await this.client.batch(
+          input.imageUrls.map((url, index) => ({
+            sql: `
+              INSERT INTO product_images (product_id, variant_id, image_url, image_type, position)
+              VALUES (?, ?, ?, 'gallery', ?)
+            `,
+            params: [productId, firstVariantId, url, index],
+          })),
+        );
+      }
+    }
+  }
+
+  async deleteAdminProduct(productId: number): Promise<void> {
+    const current = await this.client.first<Record<string, unknown>>(
+      "SELECT id FROM products WHERE id = ? LIMIT 1",
+      productId,
+    );
+    if (!current) {
+      throw new Error("Product not found");
+    }
+
+    const variants = await this.client.all<Record<string, unknown>>(
+      "SELECT id FROM product_variants WHERE product_id = ? ORDER BY id ASC",
+      productId,
+    );
+    const variantIds = variants
+      .map((row) => toNumber(row.id))
+      .filter((id): id is number => id !== null);
+
+    const variantPlaceholders = variantIds.length ? variantIds.map(() => "?").join(",") : null;
+    const refs = await this.client.first<Record<string, unknown>>(
+      `
+        SELECT
+          (SELECT COUNT(*) FROM collection_items WHERE product_id = ?) AS collection_product_refs,
+          (SELECT COUNT(*) FROM wishlist_items WHERE product_id = ?) AS wishlist_product_refs,
+          ${variantPlaceholders
+            ? `(SELECT COUNT(*) FROM collection_items WHERE variant_id IN (${variantPlaceholders}))`
+            : "0"} AS collection_variant_refs,
+          ${variantPlaceholders
+            ? `(SELECT COUNT(*) FROM viewlist_items WHERE variant_id IN (${variantPlaceholders}))`
+            : "0"} AS viewlist_variant_refs,
+          (SELECT COUNT(*) FROM highlight_products WHERE product_id = ?) AS highlight_refs
+      `,
+      productId,
+      productId,
+      ...variantIds,
+      ...variantIds,
+      productId,
+    );
+    const collectionProductRefs = toNumber(refs?.collection_product_refs) ?? 0;
+    const wishlistProductRefs = toNumber(refs?.wishlist_product_refs) ?? 0;
+    const collectionVariantRefs = toNumber(refs?.collection_variant_refs) ?? 0;
+    const viewlistVariantRefs = toNumber(refs?.viewlist_variant_refs) ?? 0;
+    const highlightRefs = toNumber(refs?.highlight_refs) ?? 0;
+    if (
+      collectionProductRefs > 0
+      || wishlistProductRefs > 0
+      || collectionVariantRefs > 0
+      || viewlistVariantRefs > 0
+      || highlightRefs > 0
+    ) {
+      throw new Error("This product is already referenced and cannot be deleted");
+    }
+
+    await this.client.batch([
+      { sql: "DELETE FROM product_images WHERE product_id = ?", params: [productId] },
+      { sql: "DELETE FROM product_categories WHERE product_id = ?", params: [productId] },
+      { sql: "DELETE FROM product_tags WHERE product_id = ?", params: [productId] },
+      { sql: "DELETE FROM product_variants WHERE product_id = ?", params: [productId] },
+      { sql: "DELETE FROM products WHERE id = ?", params: [productId] },
+    ]);
+  }
+
+  async batchUpdateAdminProducts(input: BatchUpdateAdminProductsInput): Promise<number> {
+    let updated = 0;
+    for (const productId of input.productIds) {
+      const variants = await this.client.all<Record<string, unknown>>(
+        `
+          SELECT id, variant_code, color, size_label, material, price, stock, width_cm, depth_cm, height_cm
+          FROM product_variants
+          WHERE product_id = ?
+          ORDER BY id ASC
+        `,
+        productId,
+      );
+      if (!variants.length) {
+        continue;
+      }
+      await this.updateAdminProduct(productId, {
+        variants: variants.map((variant) => ({
+          id: toNumber(variant.id) ?? undefined,
+          variantCode: toText(variant.variant_code),
+          color: toText(variant.color),
+          sizeLabel: toText(variant.size_label),
+          material: toText(variant.material),
+          price: toNumber(variant.price) ?? 0,
+          stock: toNumber(variant.stock) ?? 0,
+          widthCm: input.widthCm === undefined ? toNumber(variant.width_cm) : input.widthCm,
+          depthCm: input.depthCm === undefined ? toNumber(variant.depth_cm) : input.depthCm,
+          heightCm: input.heightCm === undefined ? toNumber(variant.height_cm) : input.heightCm,
+        })),
+      });
+      updated += 1;
+    }
+    return updated;
   }
 }
 
@@ -904,6 +1387,7 @@ export function createD1Repositories(db: D1Database): RepositoryFactory {
   const client = new D1Client(db);
   return {
     catalog: new D1CatalogRepository(client),
+    adminProducts: new D1AdminProductRepository(client),
     users: new D1UserRepository(client),
     stores: new D1StoreRepository(client),
     collections: new D1CollectionRepository(client),

@@ -1,5 +1,6 @@
 import type { RepositoryFactory } from "./domain/ports";
 import { createD1Repositories } from "./infrastructure/d1/repositories";
+import { AdminProductService } from "./services/admin-product-service";
 import { AuthService } from "./services/auth-service";
 import { CatalogService } from "./services/catalog-service";
 import { CollectionService } from "./services/collection-service";
@@ -12,6 +13,10 @@ export function createAppContext(db: D1Database) {
     repositories,
     services: {
       catalog: new CatalogService(repositories.catalog),
+      adminProducts: new AdminProductService(
+        repositories.users,
+        repositories.adminProducts,
+      ),
       lists: new ListService(
         repositories.users,
         repositories.catalog,

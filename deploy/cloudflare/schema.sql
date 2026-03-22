@@ -58,8 +58,15 @@ CREATE TABLE IF NOT EXISTS products (
     brand TEXT,
     category TEXT,
     category_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'draft',
     description TEXT,
     cover_image_url TEXT,
+    width_cm REAL,
+    depth_cm REAL,
+    height_cm REAL,
+    ai_primary_title TEXT,
+    ai_primary_description TEXT,
+    ai_metadata_json TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -73,6 +80,9 @@ CREATE TABLE IF NOT EXISTS product_variants (
     material TEXT,
     price NUMERIC NOT NULL DEFAULT 0,
     stock INTEGER NOT NULL DEFAULT 0,
+    width_cm REAL,
+    depth_cm REAL,
+    height_cm REAL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
@@ -98,6 +108,18 @@ CREATE TABLE IF NOT EXISTS product_categories (
     UNIQUE (product_id, category_id),
     FOREIGN KEY (product_id) REFERENCES products(id),
     FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS product_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    tag_group TEXT NOT NULL,
+    tag_value TEXT NOT NULL,
+    score REAL,
+    source TEXT NOT NULL DEFAULT 'ai',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (product_id, tag_group, tag_value),
+    FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 CREATE TABLE IF NOT EXISTS collections (
@@ -219,6 +241,8 @@ CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(produ
 CREATE INDEX IF NOT EXISTS idx_product_images_variant_id ON product_images(variant_id);
 CREATE INDEX IF NOT EXISTS idx_product_categories_product_id ON product_categories(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_categories_category_id ON product_categories(category_id);
+CREATE INDEX IF NOT EXISTS idx_product_tags_product_id ON product_tags(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_tags_group_value ON product_tags(tag_group, tag_value);
 CREATE INDEX IF NOT EXISTS idx_collections_owner_id ON collections(owner_id);
 CREATE INDEX IF NOT EXISTS idx_collections_store_id ON collections(store_id);
 CREATE INDEX IF NOT EXISTS idx_collection_items_collection_id ON collection_items(collection_id);

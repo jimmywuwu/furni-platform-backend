@@ -31,3 +31,13 @@ interface D1Database {
 interface Fetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
+
+interface R2PutOptions {
+  httpMetadata?: {
+    contentType?: string;
+  };
+}
+
+interface R2Bucket {
+  put(key: string, value: ArrayBuffer | ArrayBufferView | string | Blob, options?: R2PutOptions): Promise<unknown>;
+}
